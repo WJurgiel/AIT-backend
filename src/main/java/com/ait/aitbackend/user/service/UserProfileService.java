@@ -1,6 +1,7 @@
 package com.ait.aitbackend.user.service;
 
 import com.ait.aitbackend.user.entity.UserProfile;
+import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,15 @@ public class UserProfileService {
 
     public UserProfile createUser(String username, String email)
     {
+        if (userRepository.existsByUsername(username))
+        {
+            throw new UserAlreadyExistsException("Username '" + username + "' already exists!");
+        }
+        if (userRepository.existsByEmail(email))
+        {
+            throw new UserAlreadyExistsException("Username with email '" + email + "' already exists - please log in to proceed.");
+        }
+
         UserProfile newUser = new UserProfile(username, email);
         return userRepository.save(newUser);
     }
