@@ -25,7 +25,7 @@ public class UserProfileService {
         }
         if (userRepository.existsByEmail(email))
         {
-            throw new UserAlreadyExistsException("Username with email '" + email + "' already exists - please log in to proceed.");
+            throw new UserAlreadyExistsException("User with email '" + email + "' already exists - please log in to proceed.");
         }
 
         UserProfile newUser = new UserProfile(username, email);
