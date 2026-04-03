@@ -1,6 +1,7 @@
 package com.ait.aitbackend.user.controller;
 
-import com.ait.aitbackend.user.dto.UserDto;
+import com.ait.aitbackend.user.dto.UserCreateDto;
+import com.ait.aitbackend.user.dto.UserResponseDTO;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.service.UserProfileService;
 import jakarta.validation.Valid;
@@ -19,10 +20,12 @@ public class UserProfileController {
     }
 
     @PostMapping
-    public ResponseEntity<UserProfile> createUser(@Valid @RequestBody UserDto request)
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserCreateDto request)
     {
-        UserProfile createdUser = userService.createUser(request.username(), request.email());
-        return ResponseEntity.ok(createdUser);
+        UserProfile createdUser = userService.createUser(request.username(), request.email(), request.password());
+        UserResponseDTO response = new UserResponseDTO(createdUser.getId(), createdUser.getUsername(), createdUser.getEmail());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

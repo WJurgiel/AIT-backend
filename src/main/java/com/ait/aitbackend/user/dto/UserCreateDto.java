@@ -4,12 +4,16 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record UserDto (
+public record UserCreateDto(
         @NotBlank(message = "Username cannot be empty!")
         @Size(min = 3, max = 50, message = "Username should contain 3-50 characters")
         String username,
 
         @NotBlank(message = "Email cannot be empty!")
         @Email(message = "Incorrect email format provided!")
-        String email
+        String email,
+
+        @NotBlank(message = "Password cannot be empty!")
+        @Size(min = 8, message = "Password must have at least 8 characters")
+        String password
 ) {}

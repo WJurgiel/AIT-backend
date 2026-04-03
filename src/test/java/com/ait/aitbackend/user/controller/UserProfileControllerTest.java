@@ -1,6 +1,6 @@
 package com.ait.aitbackend.user.controller;
 
-import com.ait.aitbackend.user.dto.UserDto;
+import com.ait.aitbackend.user.dto.UserCreateDto;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.service.UserProfileService;
@@ -36,14 +36,16 @@ public class UserProfileControllerTest {
     private final String username2 = "TestPlayer12345";
     private final String email1 = "test@mail.com";
     private final String email2 = "other@mail.com";
+    private final String password1 = "mockpassword1234!";
+
     @Test
     void shouldReturn200AndUserWhenCreatingUser() throws Exception
     {
-        UserDto request = new UserDto(username1, email1);
-        UserProfile createdUser = new UserProfile(username1, email1);
+        UserCreateDto request = new UserCreateDto(username1, email1, password1);
+        UserProfile createdUser = new UserProfile(username1, email1, password1);
         createdUser.setId(99L);
 
-        when(userService.createUser(username1, email1)).thenReturn(createdUser);
+        when(userService.createUser(username1, email1, password1)).thenReturn(createdUser);
 
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -57,26 +59,26 @@ public class UserProfileControllerTest {
     @Test
     void shouldReturnConflictWhenUsernameOrEmailAlreadyExists() throws Exception
     {
-        UserDto firstRequest = new UserDto(username1, email1);
-        UserDto secondRequest = new UserDto(username1, email2);
-        UserDto thirdRequest = new UserDto(username2, email1);
+        UserCreateDto firstRequest = new UserCreateDto(username1, email1, password1);
+        UserCreateDto secondRequest = new UserCreateDto(username1, email2, password1);
+        UserCreateDto thirdRequest = new UserCreateDto(username2, email1, password1);
 
-        UserProfile createdUser = new UserProfile(username1, email1);
+        UserProfile createdUser = new UserProfile(username1, email1, password1);
         createdUser.setId(99L);
 
-        when(userService.createUser(username1, email1)).thenReturn(createdUser);
+        when(userService.createUser(username1, email1, password1)).thenReturn(createdUser);
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(firstRequest)))
                 .andExpect(status().isOk());
 
-        when(userService.createUser(username1, email2)).thenThrow(UserAlreadyExistsException.class);
+        when(userService.createUser(username1, email2, password1)).thenThrow(UserAlreadyExistsException.class);
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(secondRequest)))
                 .andExpect(status().isConflict());
 
-        when(userService.createUser(username2, email1)).thenThrow(UserAlreadyExistsException.class);
+        when(userService.createUser(username2, email1, password1)).thenThrow(UserAlreadyExistsException.class);
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(thirdRequest)))
@@ -88,8 +90,8 @@ public class UserProfileControllerTest {
     {
         String badUsername = "A";
         String badEmail = "invalid";
-        UserDto firstBadRequest = new UserDto(badUsername, email1);
-        UserDto secondBadRequest = new UserDto(username1, badEmail);
+        UserCreateDto firstBadRequest = new UserCreateDto(badUsername, email1, password1);
+        UserCreateDto secondBadRequest = new UserCreateDto(username1, badEmail, password1);
 
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -105,8 +107,8 @@ public class UserProfileControllerTest {
     @Test
     void shouldReturnBadRequestWhenNoEmailOrUsernameProvided() throws Exception
     {
-        UserDto firstBadRequest = new UserDto(null, email1);
-        UserDto secondBadRequest = new UserDto(username1, null);
+        UserCreateDto firstBadRequest = new UserCreateDto(null, email1, password1);
+        UserCreateDto secondBadRequest = new UserCreateDto(username1, null, password1);
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -134,8 +136,8 @@ public class UserProfileControllerTest {
     void shouldReturn200AndListOfUsersWhenGettingAllUsers() throws Exception
     {
         List<UserProfile> existingUsers = new LinkedList<UserProfile>();
-        existingUsers.add(new UserProfile(username1, email1));
-        existingUsers.add(new UserProfile(username2, email2));
+        existingUsers.add(new UserProfile(username1, email1, password1));
+        existingUsers.add(new UserProfile(username2, email2, password1));
 
         when(userService.getAllUsers()).thenReturn(existingUsers);
 

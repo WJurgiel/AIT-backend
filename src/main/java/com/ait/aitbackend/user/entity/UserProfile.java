@@ -1,7 +1,11 @@
 package com.ait.aitbackend.user.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "users")
 public class UserProfile {
@@ -16,18 +20,15 @@ public class UserProfile {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
+    private String password;
+
     public UserProfile() {}
 
-    public UserProfile(String username, String email)
+    public UserProfile(String username, String email, String password)
     {
         this.username = username;
         this.email = email;
+        this.password = password;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id;}
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
 }

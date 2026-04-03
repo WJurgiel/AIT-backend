@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +24,9 @@ public class UserProfileServiceTest {
     @Mock
     private UserProfileRepository userRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserProfileService userService;
 
@@ -30,16 +34,17 @@ public class UserProfileServiceTest {
     private final String username2 = "TestPlayer12345";
     private final String email1 = "test@mail.com";
     private final String email2 = "other@mail.com";
+    private final String password1 = "mockpassword1234!";
 
     @Test
     void shouldCreateNewUser()
     {
-        UserProfile mockUser = new UserProfile(username1, email1);
+        UserProfile mockUser = new UserProfile(username1, email1, password1);
         mockUser.setId(1L);
 
         when(userRepository.save(any(UserProfile.class))).thenReturn(mockUser);
 
-        UserProfile result = userService.createUser(username1, email1);
+        UserProfile result = userService.createUser(username1, email1, password1);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -51,7 +56,7 @@ public class UserProfileServiceTest {
     @Test
     void shouldFindUserByUsername()
     {
-        UserProfile existingUser = new UserProfile(username1, email1);
+        UserProfile existingUser = new UserProfile(username1, email1, password1);
         when(userRepository.findByUsername(username1)).thenReturn(Optional.of(existingUser));
 
         Optional<UserProfile> result = userService.getUserByUsername(username1);
@@ -68,7 +73,7 @@ public class UserProfileServiceTest {
 
         UserAlreadyExistsException thrownException = assertThrows(
                 UserAlreadyExistsException.class,
-                () -> userService.createUser(username1, email1));
+                () -> userService.createUser(username1, email1, password1));
 
         assertTrue(thrownException.getMessage().contains("already exists"));
 
@@ -82,7 +87,7 @@ public class UserProfileServiceTest {
 
         UserAlreadyExistsException thrownException = assertThrows(
                 UserAlreadyExistsException.class,
-                () -> userService.createUser(username1, email1));
+                () -> userService.createUser(username1, email1, password1));
 
         assertTrue(thrownException.getMessage().contains("already exists"));
 
@@ -103,8 +108,8 @@ public class UserProfileServiceTest {
     void shouldReturnAllUsers()
     {
         List<UserProfile> existingUsers = new LinkedList<UserProfile>();
-        existingUsers.add(new UserProfile(username1, email1));
-        existingUsers.add(new UserProfile(username2, email2));
+        existingUsers.add(new UserProfile(username1, email1, password1));
+        existingUsers.add(new UserProfile(username2, email2, password1));
 
         when(userRepository.findAll()).thenReturn(existingUsers);
 
