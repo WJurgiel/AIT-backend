@@ -19,15 +19,6 @@ public class UserProfileController {
         this.userService = userService;
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserCreateDto request)
-    {
-        UserProfile createdUser = userService.createUser(request.username(), request.email(), request.password());
-        UserResponseDTO response = new UserResponseDTO(createdUser.getId(), createdUser.getUsername(), createdUser.getEmail());
-
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping
     public ResponseEntity<List<UserProfile>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());

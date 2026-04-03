@@ -1,14 +1,10 @@
 package com.ait.aitbackend.user.controller;
 
-import com.ait.aitbackend.user.dto.UserCreateDto;
 import com.ait.aitbackend.user.entity.UserProfile;
-import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.service.UserProfileService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -18,7 +14,6 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,8 +21,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserProfileControllerTest {
     @Autowired
     private MockMvc mockMvc;
-
-    ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     private UserProfileService userService;
@@ -38,88 +31,6 @@ public class UserProfileControllerTest {
     private final String email2 = "other@mail.com";
     private final String password1 = "mockpassword1234!";
 
-    @Test
-    void shouldReturn200AndUserWhenCreatingUser() throws Exception
-    {
-        UserCreateDto request = new UserCreateDto(username1, email1, password1);
-        UserProfile createdUser = new UserProfile(username1, email1, password1);
-        createdUser.setId(99L);
-
-        when(userService.createUser(username1, email1, password1)).thenReturn(createdUser);
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(99))
-                .andExpect(jsonPath("$.username").value(username1))
-                .andExpect(jsonPath("$.email").value(email1));
-    }
-
-    @Test
-    void shouldReturnConflictWhenUsernameOrEmailAlreadyExists() throws Exception
-    {
-        UserCreateDto firstRequest = new UserCreateDto(username1, email1, password1);
-        UserCreateDto secondRequest = new UserCreateDto(username1, email2, password1);
-        UserCreateDto thirdRequest = new UserCreateDto(username2, email1, password1);
-
-        UserProfile createdUser = new UserProfile(username1, email1, password1);
-        createdUser.setId(99L);
-
-        when(userService.createUser(username1, email1, password1)).thenReturn(createdUser);
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(firstRequest)))
-                .andExpect(status().isOk());
-
-        when(userService.createUser(username1, email2, password1)).thenThrow(UserAlreadyExistsException.class);
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(secondRequest)))
-                .andExpect(status().isConflict());
-
-        when(userService.createUser(username2, email1, password1)).thenThrow(UserAlreadyExistsException.class);
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(thirdRequest)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void shouldReturnBadRequestWhenInvalidEmailOrUsernameProvided() throws Exception
-    {
-        String badUsername = "A";
-        String badEmail = "invalid";
-        UserCreateDto firstBadRequest = new UserCreateDto(badUsername, email1, password1);
-        UserCreateDto secondBadRequest = new UserCreateDto(username1, badEmail, password1);
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(firstBadRequest)))
-                .andExpect(status().isBadRequest());
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(secondBadRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldReturnBadRequestWhenNoEmailOrUsernameProvided() throws Exception
-    {
-        UserCreateDto firstBadRequest = new UserCreateDto(null, email1, password1);
-        UserCreateDto secondBadRequest = new UserCreateDto(username1, null, password1);
-
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(firstBadRequest)))
-                .andExpect(status().isBadRequest());
-
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(secondBadRequest)))
-                .andExpect(status().isBadRequest());
-    }
 
     @Test
     void shouldReturn404WhenUserNotFound() throws Exception
