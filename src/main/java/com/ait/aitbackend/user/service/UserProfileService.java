@@ -1,8 +1,9 @@
 package com.ait.aitbackend.user.service;
 
+import com.ait.aitbackend.user.dto.UserAboutMeResponse;
 import com.ait.aitbackend.user.entity.UserProfile;
-import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,24 +13,9 @@ import java.util.Optional;
 public class UserProfileService {
     private final UserProfileRepository userRepository;
 
-    public UserProfileService(UserProfileRepository userRepository)
+    public UserProfileService(UserProfileRepository userRepository, PasswordEncoder passwordEncoder)
     {
         this.userRepository = userRepository;
-    }
-
-    public UserProfile createUser(String username, String email)
-    {
-        if (userRepository.existsByUsername(username))
-        {
-            throw new UserAlreadyExistsException("Username '" + username + "' already exists!");
-        }
-        if (userRepository.existsByEmail(email))
-        {
-            throw new UserAlreadyExistsException("User with email '" + email + "' already exists - please log in to proceed.");
-        }
-
-        UserProfile newUser = new UserProfile(username, email);
-        return userRepository.save(newUser);
     }
 
     public List<UserProfile> getAllUsers()

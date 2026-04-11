@@ -1,27 +1,29 @@
 package com.ait.aitbackend.user.service;
 
 import com.ait.aitbackend.user.entity.UserProfile;
-import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UserProfileServiceTest {
 
     @Mock
     private UserProfileRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserProfileService userService;
@@ -30,28 +32,12 @@ public class UserProfileServiceTest {
     private final String username2 = "TestPlayer12345";
     private final String email1 = "test@mail.com";
     private final String email2 = "other@mail.com";
-
-    @Test
-    void shouldCreateNewUser()
-    {
-        UserProfile mockUser = new UserProfile(username1, email1);
-        mockUser.setId(1L);
-
-        when(userRepository.save(any(UserProfile.class))).thenReturn(mockUser);
-
-        UserProfile result = userService.createUser(username1, email1);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals(username1, result.getUsername());
-
-        verify(userRepository, times(1)).save(any(UserProfile.class));
-    }
+    private final String password1 = "mockpassword1234!";
 
     @Test
     void shouldFindUserByUsername()
     {
-        UserProfile existingUser = new UserProfile(username1, email1);
+        UserProfile existingUser = new UserProfile(username1, email1, password1);
         when(userRepository.findByUsername(username1)).thenReturn(Optional.of(existingUser));
 
         Optional<UserProfile> result = userService.getUserByUsername(username1);
@@ -59,34 +45,6 @@ public class UserProfileServiceTest {
         assertTrue(result.isPresent());
         assertEquals(username1, result.get().getUsername());
         assertEquals(email1, result.get().getEmail());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenUsernameAlreadyExists()
-    {
-        when(userRepository.existsByUsername(username1)).thenReturn(true);
-
-        UserAlreadyExistsException thrownException = assertThrows(
-                UserAlreadyExistsException.class,
-                () -> userService.createUser(username1, email1));
-
-        assertTrue(thrownException.getMessage().contains("already exists"));
-
-        verify(userRepository, never()).save(any(UserProfile.class));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenEmailAlreadyExists()
-    {
-        when(userRepository.existsByEmail(email1)).thenReturn(true);
-
-        UserAlreadyExistsException thrownException = assertThrows(
-                UserAlreadyExistsException.class,
-                () -> userService.createUser(username1, email1));
-
-        assertTrue(thrownException.getMessage().contains("already exists"));
-
-        verify(userRepository, never()).save(any(UserProfile.class));
     }
 
     @Test
@@ -103,8 +61,8 @@ public class UserProfileServiceTest {
     void shouldReturnAllUsers()
     {
         List<UserProfile> existingUsers = new LinkedList<UserProfile>();
-        existingUsers.add(new UserProfile(username1, email1));
-        existingUsers.add(new UserProfile(username2, email2));
+        existingUsers.add(new UserProfile(username1, email1, password1));
+        existingUsers.add(new UserProfile(username2, email2, password1));
 
         when(userRepository.findAll()).thenReturn(existingUsers);
 
