@@ -1,5 +1,6 @@
 package com.ait.aitbackend.user.service;
 
+import com.ait.aitbackend.user.dto.UserAboutMeResponse;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

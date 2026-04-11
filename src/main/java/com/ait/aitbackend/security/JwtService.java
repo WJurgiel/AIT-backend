@@ -28,4 +28,25 @@ public class JwtService {
         byte[] keyBytes = SECRET_KEY.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    public String extractUsername(String token)
+    {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    public boolean isTokenValid(String token)
+    {
+        try{
+            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
+            return true;
+        } catch (Exception e){
+            return false;
+        }
+
+    }
 }

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,6 +35,9 @@ public class AuthRegistrationControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     private final String username1 = "TestPlayer123";
     private final String username2 = "TestPlayer12345";
