@@ -2,8 +2,9 @@ package com.ait.aitbackend.auth.service;
 
 import com.ait.aitbackend.security.JwtService;
 import com.ait.aitbackend.user.entity.UserProfile;
-import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
+import com.ait.aitbackend.user.validator.UserValidator;
+import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -11,27 +12,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class AuthService {
     private final UserProfileRepository userRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-
-
-    public AuthService(
-            UserProfileRepository userRepository,
-            AuthenticationManager authenticationManger,
-            JwtService jwtService,
-            PasswordEncoder passwordEncoder)
-    {
-        this.userRepository = userRepository;
-        this.authenticationManager = authenticationManger;
-        this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private final UserValidator userValidator;
 
     public String loginUser(String username, String password)
     {
+        userValidator.validateUserLogin(username, password);
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         username,
@@ -44,14 +36,8 @@ public class AuthService {
 
     public UserProfile registerUser(String username, String email, String password)
     {
-        if (userRepository.existsByUsername(username))
-        {
-            throw new UserAlreadyExistsException("Username '" + username + "' already exists!");
-        }
-        if (userRepository.existsByEmail(email))
-        {
-            throw new UserAlreadyExistsException("User with email '" + email + "' already exists - please log in to proceed.");
-        }
+        userValidator.validateUserRegister(username, email);
+
         String hashedPassword = passwordEncoder.encode(password);
 
         UserProfile newUser = new UserProfile(username, email, hashedPassword);
