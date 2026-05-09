@@ -1,0 +1,150 @@
+package com.ait.aitbackend.games.controller;
+
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
+import com.ait.aitbackend.games.service.CheapSharkService;
+import com.ait.aitbackend.security.JwtService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(CheapSharkController.class)
+class CheapSharkControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private CheapSharkService cheapSharkService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @Test
+    void shouldReturnDealsPayload() throws Exception {
+        CheapSharkDealDto deal = new CheapSharkDealDto(
+                "THEWITCHER3WILDHUNT",
+                "The Witcher 3: Wild Hunt",
+                "/game/the-witcher-3-wild-hunt/",
+                "abc123",
+                "1",
+                "112330",
+                "7.99",
+                "39.99",
+                "1",
+                "80.020005",
+                "93",
+                "Overwhelmingly Positive",
+                "96",
+                "234755",
+                "292030",
+                1431907200L,
+                1766082419L,
+                "9.9",
+                "thumb"
+        );
+
+        when(cheapSharkService.getDeals(1, 1)).thenReturn(List.of(deal));
+
+        mockMvc.perform(get("/api/cheapshark/deals")
+                        .param("storeID", "1")
+                        .param("onSale", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].dealID").value("abc123"));
+    }
+
+    @Test
+    void shouldReturn400WhenRequiredParamIsMissing() throws Exception {
+        mockMvc.perform(get("/api/cheapshark/deals")
+                        .param("storeID", "1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnNotFoundFromExternalApiInsteadOf500() throws Exception {
+        String upstreamBody = "{\"error\":\"Deal not found\"}";
+        HttpClientErrorException upstreamException = HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                HttpHeaders.EMPTY,
+                upstreamBody.getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8
+        );
+
+        when(cheapSharkService.getDealById("missing-deal")).thenThrow(upstreamException);
+
+        mockMvc.perform(get("/api/cheapshark/deal").param("id", "missing-deal"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(upstreamBody));
+    }
+
+    @Test
+    void shouldReturnDealDetailsDto() throws Exception {
+        CheapSharkDealDetailsDto dto = new CheapSharkDealDetailsDto(
+                new CheapSharkDealDetailsDto.GameInfoDto(
+                        "1",
+                        "112330",
+                        "The Witcher 3: Wild Hunt",
+                        "292030",
+                        "7.99",
+                        "39.99",
+                        "Overwhelmingly Positive",
+                        "96",
+                        "234755",
+                        "93",
+                        "/game/the-witcher-3-wild-hunt/",
+                        1431907200L,
+                        "N/A",
+                        null,
+                        "thumb"
+                ),
+                List.of(),
+                new CheapSharkDealDetailsDto.CheapestPriceDto("3.99", 1766082419L)
+        );
+
+        when(cheapSharkService.getDealById("deal-123")).thenReturn(dto);
+
+        mockMvc.perform(get("/api/cheapshark/deal").param("id", "deal-123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gameInfo.gameID").value("112330"))
+                .andExpect(jsonPath("$.cheapestPrice.price").value("3.99"));
+    }
+
+    @Test
+    void shouldRedirectToCheapSharkStoreUrl() throws Exception {
+        String redirectUrl = "https://www.cheapshark.com/redirect?dealID=x77a6faCQSCDjyCF%2Fe6U0ed%2B202eYPAdrpMjRjoJvYc%3D";
+        when(cheapSharkService.buildRedirectUrl("x77a6faCQSCDjyCF%2Fe6U0ed%2B202eYPAdrpMjRjoJvYc%3D"))
+                .thenReturn(redirectUrl);
+
+        mockMvc.perform(get("/api/cheapshark/redirect")
+                        .param("dealID", "x77a6faCQSCDjyCF%2Fe6U0ed%2B202eYPAdrpMjRjoJvYc%3D"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", redirectUrl));
+    }
+
+    @Test
+    void shouldReturn400WhenRedirectParamIsMissing() throws Exception {
+        mockMvc.perform(get("/api/cheapshark/redirect"))
+                .andExpect(status().isBadRequest());
+    }
+}
+
