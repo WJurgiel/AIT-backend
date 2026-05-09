@@ -1,5 +1,6 @@
 package com.ait.aitbackend.user.exceptionHandlers;
 
+import com.ait.aitbackend.user.exceptions.InvalidPasswordException;
 import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.exceptions.UserDoesNotExistException;
 import org.springframework.http.HttpStatus;
@@ -13,32 +14,31 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class UserExceptionHandler {
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<Map<String,String>> handleUserAlreadyExists(UserAlreadyExistsException ex)
-    {
-        Map<String,String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Conflict");
-        errorResponse.put("message", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String,String>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
     }
 
     @ExceptionHandler(UserDoesNotExistException.class)
-    public ResponseEntity<Map<String,String>> handleUserDoesNotExists(UserDoesNotExistException ex)
-    {
-        Map<String,String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Conflict");
-        errorResponse.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    public ResponseEntity<Map<String,String>> handleUserDoesNotExists(UserDoesNotExistException ex) {
+        return error(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String,String>> handleBadCredentials(BadCredentialsException ex) {
-        Map<String,String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Conflict");
-        errorResponse.put("message", ex.getMessage());
+        return error(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage());
+    }
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Map<String,String>> handleInvalidPassword(InvalidPasswordException ex) {
+        return error(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+    }
+
+    private ResponseEntity<Map<String,String>> error(HttpStatus status, String error, String message) {
+        Map<String,String> body = new HashMap<>();
+        body.put("error", error);
+        body.put("message", message);
+        return ResponseEntity.status(status).body(body);
     }
 }

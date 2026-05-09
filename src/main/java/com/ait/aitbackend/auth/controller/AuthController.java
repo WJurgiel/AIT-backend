@@ -66,6 +66,17 @@ public class AuthController {
                 request.password());
         RegistrationResponse response = new RegistrationResponse(createdUser.getUsername());
 
-        return ResponseEntity.ok(response);
+        String token = authService.loginUser(request.username(), request.password());
+        ResponseCookie jwtCookie = ResponseCookie.from(jwtCookieName, token)
+                .httpOnly(true)
+                .secure(jwtCookieSecure)
+                .path("/")
+                .maxAge(jwtCookieMaxAgeSeconds)
+                .sameSite(jwtCookieSameSite)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(response);
     }
 }
