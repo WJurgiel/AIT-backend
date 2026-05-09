@@ -1,7 +1,9 @@
 package com.ait.aitbackend.user.dto;
 
+import java.time.LocalDateTime;
+
 public record UserAboutMeResponse(
         String username,
-        String email
-) {
-}
+        String email,
+        LocalDateTime createdAt
+) {}
