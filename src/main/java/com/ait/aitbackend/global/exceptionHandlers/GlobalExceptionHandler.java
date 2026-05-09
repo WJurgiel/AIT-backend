@@ -1,8 +1,11 @@
 package com.ait.aitbackend.global.exceptionHandlers;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,5 +27,25 @@ public class GlobalExceptionHandler {
         });
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(RestClientResponseException.class)
+    public ResponseEntity<String> handleExternalApiResponse(RestClientResponseException ex) {
+        String body = ex.getResponseBodyAsString();
+        if (body == null || body.isBlank()) {
+            body = "{\"error\":\"External API error\",\"message\":\"Upstream returned " + ex.getStatusCode().value() + "\"}";
+        }
+
+        return ResponseEntity.status(ex.getStatusCode())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
+    }
+
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<Map<String, String>> handleExternalApiConnection(ResourceAccessException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Gateway Timeout");
+        error.put("message", "External API is unavailable");
+        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(error);
     }
 }
