@@ -77,9 +77,21 @@ class CheapSharkControllerTest {
                 .thenReturn(new DealsPageResponse(List.of(deal), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/cheapshark/deals")
-                        .param("storeID", "1"))
+                        .param("platformId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].dealID").value("abc123"));
+    }
+
+    @Test
+    void shouldPreferPlatformIdOverStoreIdWhenBothProvided() throws Exception {
+        when(cheapSharkService.getDeals(7)).thenReturn(List.of());
+        when(filterService.filter(anyList(), any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt()))
+                .thenReturn(new DealsPageResponse(List.of(), 0, 20, 0, 0, true));
+
+        mockMvc.perform(get("/api/cheapshark/deals")
+                        .param("platformId", "7")
+                        .param("storeID", "1"))
+                .andExpect(status().isOk());
     }
 
     @Test

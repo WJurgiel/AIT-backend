@@ -75,7 +75,6 @@ public class UserProfileService {
         UserPreferences p = user.getPreferences();
 
         if (dto.platforms() != null) p.setPlatformList(dto.platforms());
-        if (dto.genres() != null) p.setGenreList(dto.genres());
 
         if (dto.notifications() != null) {
             var n = dto.notifications();
@@ -92,7 +91,6 @@ public class UserProfileService {
     private UserPreferencesDto toDto(UserPreferences p) {
         return new UserPreferencesDto(
                 p.getPlatformList(),
-                p.getGenreList(),
                 new UserPreferencesDto.NotificationsDto(
                         p.isWishlistOnSale(),
                         p.isDailyDigest(),

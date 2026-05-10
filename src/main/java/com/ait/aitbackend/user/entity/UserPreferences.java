@@ -16,9 +16,6 @@ public class UserPreferences {
     @Column(name = "pref_platforms")
     private String platforms = "";
 
-    @Column(name = "pref_genres")
-    private String genres = "";
-
     @Column(name = "notif_wishlist_on_sale")
     private boolean wishlistOnSale = true;
 
@@ -40,12 +37,4 @@ public class UserPreferences {
         this.platforms = list == null ? "" : String.join(",", list);
     }
 
-    public List<String> getGenreList() {
-        if (genres == null || genres.isBlank()) return new ArrayList<>();
-        return new ArrayList<>(List.of(genres.split(",")));
-    }
-
-    public void setGenreList(List<String> list) {
-        this.genres = list == null ? "" : String.join(",", list);
-    }
 }
