@@ -63,13 +63,16 @@ class CheapSharkControllerTest {
                 "thumb"
         );
 
-        when(cheapSharkService.getDeals(1, 1)).thenReturn(List.of(deal));
+        org.springframework.data.domain.PageImpl<CheapSharkDealDto> page =
+                new org.springframework.data.domain.PageImpl<>(List.of(deal));
+
+        when(cheapSharkService.getDealsPaged(1, 1, 0, 20)).thenReturn(page);
 
         mockMvc.perform(get("/api/cheapshark/deals")
                         .param("storeID", "1")
                         .param("onSale", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].dealID").value("abc123"));
+                .andExpect(jsonPath("$.content[0].dealID").value("abc123"));
     }
 
     @Test

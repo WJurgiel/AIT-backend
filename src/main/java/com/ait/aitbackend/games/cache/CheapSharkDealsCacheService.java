@@ -20,7 +20,7 @@ public class CheapSharkDealsCacheService {
 
     public CheapSharkDealsCacheService(
             CheapSharkDealsCacheRepository cacheRepository,
-            @Value("${cheapshark.cache.deals.ttl-seconds:300}") long ttlSeconds
+            @Value("${cheapshark.cache.deals.ttl-seconds:3600}") long ttlSeconds
     ) {
         this.cacheRepository = cacheRepository;
         this.ttlSeconds = ttlSeconds;
