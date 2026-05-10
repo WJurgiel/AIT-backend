@@ -6,6 +6,7 @@ import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
 import com.ait.aitbackend.games.service.CheapSharkService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,11 +24,13 @@ public class CheapSharkController {
     private final CheapSharkService cheapSharkService;
 
     @GetMapping(value = "/deals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<CheapSharkDealDto>> getDeals(
+    public ResponseEntity<Page<CheapSharkDealDto>> getDeals(
             @RequestParam("storeID") Integer storeId,
-            @RequestParam Integer onSale
+            @RequestParam Integer onSale,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(cheapSharkService.getDeals(storeId, onSale));
+        return ResponseEntity.ok(cheapSharkService.getDealsPaged(storeId, onSale, page, size));
     }
 
     @GetMapping(value = "/games", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -51,4 +54,3 @@ public class CheapSharkController {
         return ResponseEntity.status(302).location(URI.create(redirectUrl)).build();
     }
 }
-

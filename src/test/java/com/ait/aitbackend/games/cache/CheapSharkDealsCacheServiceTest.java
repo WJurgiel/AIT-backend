@@ -1,16 +1,18 @@
 package com.ait.aitbackend.games.cache;
 
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,9 +22,9 @@ class CheapSharkDealsCacheServiceTest {
     @Test
     void shouldReturnFreshDealsFromCache() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
-        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, new ObjectMapper(), 300);
+        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
 
-        List<CheapSharkDealDto> deals = List.of(new CheapSharkDealDto(
+        CheapSharkDealDto deal = new CheapSharkDealDto(
                 "INTERNAL",
                 "Game",
                 null,
@@ -42,20 +44,22 @@ class CheapSharkDealsCacheServiceTest {
                 1L,
                 "9.0",
                 "thumb"
-        ));
+        );
 
         String key = cacheService.buildCacheKey(1, 1);
         CheapSharkDealsCacheDocument document = new CheapSharkDealsCacheDocument(
+                key + ":0",
                 key,
+                0,
                 1,
-                1,
-                "[{\"dealID\":\"deal-1\"}]",
-                1,
+                "100",
+                deal,
                 Instant.now(),
                 Instant.now().plusSeconds(60)
         );
 
-        when(repository.findById(key)).thenReturn(Optional.of(document));
+        when(repository.findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(eq(key), any(Instant.class)))
+                .thenReturn(List.of(document));
 
         Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1, 1);
 
@@ -66,20 +70,11 @@ class CheapSharkDealsCacheServiceTest {
     @Test
     void shouldIgnoreExpiredCacheEntry() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
-        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, new ObjectMapper(), 300);
+        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
 
         String key = cacheService.buildCacheKey(1, 1);
-        CheapSharkDealsCacheDocument document = new CheapSharkDealsCacheDocument(
-                key,
-                1,
-                1,
-                "[]",
-                0,
-                Instant.now().minusSeconds(600),
-                Instant.now().minusSeconds(1)
-        );
-
-        when(repository.findById(key)).thenReturn(Optional.of(document));
+        when(repository.findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(eq(key), any(Instant.class)))
+                .thenReturn(List.of());
 
         Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1, 1);
 
@@ -87,13 +82,86 @@ class CheapSharkDealsCacheServiceTest {
     }
 
     @Test
-    void shouldSaveDealsWithExpiration() {
+    void shouldSaveEachDealAsSeparateDocument() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
-        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, new ObjectMapper(), 300);
+        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
+
+        List<CheapSharkDealDto> deals = List.of(
+                new CheapSharkDealDto(
+                        "INTERNAL-1",
+                        "Game 1",
+                        null,
+                        "deal-1",
+                        "1",
+                        "100",
+                        "4.99",
+                        "19.99",
+                        "1",
+                        "75.0",
+                        "80",
+                        "Positive",
+                        "80",
+                        "1000",
+                        "123",
+                        1L,
+                        1L,
+                        "9.0",
+                        "thumb-1"
+                ),
+                new CheapSharkDealDto(
+                        "INTERNAL-2",
+                        "Game 2",
+                        null,
+                        "deal-2",
+                        "1",
+                        "101",
+                        "7.99",
+                        "29.99",
+                        "1",
+                        "73.0",
+                        "70",
+                        "Mostly Positive",
+                        "75",
+                        "500",
+                        "124",
+                        2L,
+                        2L,
+                        "8.8",
+                        "thumb-2"
+                )
+        );
+
+        cacheService.saveDeals(1, 1, deals);
+
+        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1, 1));
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        ArgumentCaptor<Iterable<CheapSharkDealsCacheDocument>> documentsCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(documentsCaptor.capture());
+
+        List<CheapSharkDealsCacheDocument> savedDocuments = StreamSupport.stream(
+                documentsCaptor.getValue().spliterator(),
+                false
+        ).toList();
+
+        assertEquals(2, savedDocuments.size());
+        assertEquals(0, savedDocuments.getFirst().getResultOrder());
+        assertEquals("deal-1", savedDocuments.getFirst().getDeal().dealId());
+        assertEquals("100", savedDocuments.getFirst().getGameId());
+        assertEquals(1, savedDocuments.getLast().getResultOrder());
+        assertEquals("deal-2", savedDocuments.getLast().getDeal().dealId());
+        assertEquals("101", savedDocuments.getLast().getGameId());
+    }
+
+    @Test
+    void shouldRemoveExistingCacheEntriesWhenSavingEmptyList() {
+        CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
+        CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
 
         cacheService.saveDeals(1, 1, List.of());
 
-        verify(repository).save(any(CheapSharkDealsCacheDocument.class));
+        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1, 1));
+        verify(repository, org.mockito.Mockito.never()).saveAll(any());
     }
 }
 

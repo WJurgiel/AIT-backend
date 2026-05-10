@@ -86,6 +86,26 @@ class CheapSharkServiceTest {
     }
 
     @Test
+    void shouldForceRefreshDealsBypassingCache() {
+        RestClient.Builder restClientBuilder = RestClient.builder();
+        MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
+        com.ait.aitbackend.games.cache.CheapSharkDealsCacheService cacheService = mock(com.ait.aitbackend.games.cache.CheapSharkDealsCacheService.class);
+        CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService);
+
+        String payload = "[{\"dealID\":\"fresh-1\"}]";
+
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1"))
+                .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
+
+        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.refreshDeals(1, 1);
+
+        assertEquals(1, result.size());
+        assertEquals("fresh-1", result.getFirst().dealId());
+        verify(cacheService).saveDeals(eq(1), eq(1), any());
+        mockServer.verify();
+    }
+
+    @Test
     void shouldEncodeDealIdWithSpecialCharacters() {
         RestClient.Builder restClientBuilder = RestClient.builder();
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();

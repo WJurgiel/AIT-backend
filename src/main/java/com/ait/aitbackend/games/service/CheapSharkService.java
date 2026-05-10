@@ -6,6 +6,7 @@ import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
@@ -41,6 +42,22 @@ public class CheapSharkService {
     public List<CheapSharkDealDto> getDeals(Integer storeId, Integer onSale) {
         return dealsCacheService.getFreshDeals(storeId, onSale)
                 .orElseGet(() -> fetchAndCacheDeals(storeId, onSale));
+    }
+
+    @SuppressWarnings("unused")
+    public List<CheapSharkDealDto> refreshDeals(Integer storeId, Integer onSale) {
+        return fetchAndCacheDeals(storeId, onSale);
+    }
+
+    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, Integer onSale, int page, int size) {
+        Page<CheapSharkDealDto> cached = dealsCacheService.getDealsPaged(storeId, onSale, page, size);
+        if (cached.hasContent()) {
+            return cached;
+        }
+
+        // cache miss for requested page -> fetch fresh data, save and re-query
+        fetchAndCacheDeals(storeId, onSale);
+        return dealsCacheService.getDealsPaged(storeId, onSale, page, size);
     }
 
     private List<CheapSharkDealDto> fetchAndCacheDeals(Integer storeId, Integer onSale) {
@@ -108,7 +125,3 @@ public class CheapSharkService {
         }
     }
 }
-
-
-
-

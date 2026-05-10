@@ -1,79 +1,90 @@
 package com.ait.aitbackend.games.cache;
 
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 @Service
 public class CheapSharkDealsCacheService {
     private final CheapSharkDealsCacheRepository cacheRepository;
-    private final ObjectMapper objectMapper;
     private final long ttlSeconds;
 
     public CheapSharkDealsCacheService(
             CheapSharkDealsCacheRepository cacheRepository,
-            ObjectMapper objectMapper,
             @Value("${cheapshark.cache.deals.ttl-seconds:300}") long ttlSeconds
     ) {
         this.cacheRepository = cacheRepository;
-        this.objectMapper = objectMapper;
         this.ttlSeconds = ttlSeconds;
     }
 
     public Optional<List<CheapSharkDealDto>> getFreshDeals(Integer storeId, Integer onSale) {
         String cacheKey = buildCacheKey(storeId, onSale);
-        return cacheRepository.findById(cacheKey)
-                .filter(entry -> entry.getExpiresAt() != null && entry.getExpiresAt().isAfter(Instant.now()))
-                .flatMap(entry -> deserializeDeals(entry.getResponsePayload()));
+        List<CheapSharkDealDto> deals = cacheRepository
+                .findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(cacheKey, Instant.now())
+                .stream()
+                .map(CheapSharkDealsCacheDocument::getDeal)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        return deals.isEmpty() ? Optional.empty() : Optional.of(deals);
+    }
+
+    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, Integer onSale, int page, int size) {
+        String cacheKey = buildCacheKey(storeId, onSale);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "resultOrder"));
+        Page<CheapSharkDealsCacheDocument> pageResult = cacheRepository.findByCacheKeyAndExpiresAtAfter(cacheKey, Instant.now(), pageable);
+        return pageResult.map(CheapSharkDealsCacheDocument::getDeal);
     }
 
     public void saveDeals(Integer storeId, Integer onSale, List<CheapSharkDealDto> deals) {
-        Instant now = Instant.now();
-        CheapSharkDealsCacheDocument document = new CheapSharkDealsCacheDocument(
-                buildCacheKey(storeId, onSale),
-                storeId,
-                onSale,
-                serializeDeals(deals),
-                deals.size(),
-                now,
-                now.plusSeconds(ttlSeconds)
-        );
+        String cacheKey = buildCacheKey(storeId, onSale);
+        cacheRepository.deleteAllByCacheKey(cacheKey);
 
-        cacheRepository.save(document);
+        if (deals == null || deals.isEmpty()) {
+            return;
+        }
+
+        Instant now = Instant.now();
+        List<CheapSharkDealsCacheDocument> documents = IntStream.range(0, deals.size())
+                .mapToObj(resultOrder -> buildCacheDocument(cacheKey, storeId, resultOrder, deals.get(resultOrder), now))
+                .toList();
+
+        cacheRepository.saveAll(documents);
     }
 
     public String buildCacheKey(Integer storeId, Integer onSale) {
         return "v1:cheapshark:deals:storeID=" + storeId + ":onSale=" + onSale;
     }
 
-    private String serializeDeals(List<CheapSharkDealDto> deals) {
-        try {
-            return objectMapper.writeValueAsString(deals);
-        } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("Failed to serialize deals response for cache", ex);
-        }
+    private CheapSharkDealsCacheDocument buildCacheDocument(
+            String cacheKey,
+            Integer storeId,
+            int resultOrder,
+            CheapSharkDealDto deal,
+            Instant cachedAt
+    ) {
+        return new CheapSharkDealsCacheDocument(
+                buildDocumentId(cacheKey, resultOrder),
+                cacheKey,
+                resultOrder,
+                storeId,
+                deal.gameId(),
+                deal,
+                cachedAt,
+                cachedAt.plusSeconds(ttlSeconds)
+        );
     }
 
-    private Optional<List<CheapSharkDealDto>> deserializeDeals(String responsePayload) {
-        if (responsePayload == null || responsePayload.isBlank()) {
-            return Optional.empty();
-        }
-
-        try {
-            List<CheapSharkDealDto> deals = objectMapper.readValue(responsePayload, new TypeReference<>() {
-            });
-            return Optional.of(deals);
-        } catch (JsonProcessingException ex) {
-            return Optional.empty();
-        }
+    private String buildDocumentId(String cacheKey, int resultOrder) {
+        return cacheKey + ":" + resultOrder;
     }
 }
-
-
