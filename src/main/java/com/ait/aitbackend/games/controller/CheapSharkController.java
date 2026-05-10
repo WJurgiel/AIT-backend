@@ -1,18 +1,12 @@
 package com.ait.aitbackend.games.controller;
 
-import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
-import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
-import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
-import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
+import com.ait.aitbackend.games.dto.cheapshark.*;
+import com.ait.aitbackend.games.service.CheapSharkFilterService;
 import com.ait.aitbackend.games.service.CheapSharkService;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
@@ -21,16 +15,29 @@ import java.util.List;
 @RequestMapping("/api/cheapshark")
 @AllArgsConstructor
 public class CheapSharkController {
+
     private final CheapSharkService cheapSharkService;
+    private final CheapSharkFilterService filterService;
 
     @GetMapping(value = "/deals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<CheapSharkDealDto>> getDeals(
-            @RequestParam("storeID") Integer storeId,
-            @RequestParam Integer onSale,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size
+    public ResponseEntity<DealsPageResponse> getDeals(
+            @RequestParam(value = "storeID", required = false) Integer storeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Double minSavings,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(defaultValue = "savings") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
     ) {
-        return ResponseEntity.ok(cheapSharkService.getDealsPaged(storeId, onSale, page, size));
+        List<CheapSharkDealDto> allDeals = cheapSharkService.getDeals(storeId);
+
+        DealsPageResponse response = filterService.filter(
+                allDeals, search, minSavings, maxPrice, minRating, sortBy, sortDir, page, size
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(value = "/games", produces = MediaType.APPLICATION_JSON_VALUE)

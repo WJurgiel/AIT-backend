@@ -26,8 +26,8 @@ public class CheapSharkDealsCacheService {
         this.ttlSeconds = ttlSeconds;
     }
 
-    public Optional<List<CheapSharkDealDto>> getFreshDeals(Integer storeId, Integer onSale) {
-        String cacheKey = buildCacheKey(storeId, onSale);
+    public Optional<List<CheapSharkDealDto>> getFreshDeals(Integer storeId) {
+        String cacheKey = buildCacheKey(storeId);
         List<CheapSharkDealDto> deals = cacheRepository
                 .findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(cacheKey, Instant.now())
                 .stream()
@@ -38,15 +38,15 @@ public class CheapSharkDealsCacheService {
         return deals.isEmpty() ? Optional.empty() : Optional.of(deals);
     }
 
-    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, Integer onSale, int page, int size) {
-        String cacheKey = buildCacheKey(storeId, onSale);
+    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, int page, int size) {
+        String cacheKey = buildCacheKey(storeId);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "resultOrder"));
         Page<CheapSharkDealsCacheDocument> pageResult = cacheRepository.findByCacheKeyAndExpiresAtAfter(cacheKey, Instant.now(), pageable);
         return pageResult.map(CheapSharkDealsCacheDocument::getDeal);
     }
 
-    public void saveDeals(Integer storeId, Integer onSale, List<CheapSharkDealDto> deals) {
-        String cacheKey = buildCacheKey(storeId, onSale);
+    public void saveDeals(Integer storeId, List<CheapSharkDealDto> deals) {
+        String cacheKey = buildCacheKey(storeId);
         cacheRepository.deleteAllByCacheKey(cacheKey);
 
         if (deals == null || deals.isEmpty()) {
@@ -61,8 +61,9 @@ public class CheapSharkDealsCacheService {
         cacheRepository.saveAll(documents);
     }
 
-    public String buildCacheKey(Integer storeId, Integer onSale) {
-        return "v1:cheapshark:deals:storeID=" + storeId + ":onSale=" + onSale;
+    public String buildCacheKey(Integer storeId) {
+        String normalizedStoreId = storeId == null ? "all" : storeId.toString();
+        return "v1:cheapshark:deals:storeID=" + normalizedStoreId;
     }
 
     private CheapSharkDealsCacheDocument buildCacheDocument(

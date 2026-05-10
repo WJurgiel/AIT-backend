@@ -2,6 +2,8 @@ package com.ait.aitbackend.games.controller;
 
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
+import com.ait.aitbackend.games.dto.cheapshark.DealsPageResponse;
+import com.ait.aitbackend.games.service.CheapSharkFilterService;
 import com.ait.aitbackend.games.service.CheapSharkService;
 import com.ait.aitbackend.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -32,6 +38,9 @@ class CheapSharkControllerTest {
 
     @MockitoBean
     private CheapSharkService cheapSharkService;
+
+    @MockitoBean
+    private CheapSharkFilterService filterService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;
@@ -63,23 +72,24 @@ class CheapSharkControllerTest {
                 "thumb"
         );
 
-        org.springframework.data.domain.PageImpl<CheapSharkDealDto> page =
-                new org.springframework.data.domain.PageImpl<>(List.of(deal));
-
-        when(cheapSharkService.getDealsPaged(1, 1, 0, 20)).thenReturn(page);
+        when(cheapSharkService.getDeals(1)).thenReturn(List.of(deal));
+        when(filterService.filter(anyList(), any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt()))
+                .thenReturn(new DealsPageResponse(List.of(deal), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/cheapshark/deals")
-                        .param("storeID", "1")
-                        .param("onSale", "1"))
+                        .param("storeID", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].dealID").value("abc123"));
     }
 
     @Test
-    void shouldReturn400WhenRequiredParamIsMissing() throws Exception {
-        mockMvc.perform(get("/api/cheapshark/deals")
-                        .param("storeID", "1"))
-                .andExpect(status().isBadRequest());
+    void shouldReturn200WhenStoreIdIsMissing() throws Exception {
+        when(cheapSharkService.getDeals(null)).thenReturn(List.of());
+        when(filterService.filter(anyList(), any(), any(), any(), any(), anyString(), anyString(), anyInt(), anyInt()))
+                .thenReturn(new DealsPageResponse(List.of(), 0, 20, 0, 0, true));
+
+        mockMvc.perform(get("/api/cheapshark/deals"))
+                .andExpect(status().isOk());
     }
 
     @Test

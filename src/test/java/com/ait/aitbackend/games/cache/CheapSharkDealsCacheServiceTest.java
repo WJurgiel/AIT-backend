@@ -46,7 +46,7 @@ class CheapSharkDealsCacheServiceTest {
                 "thumb"
         );
 
-        String key = cacheService.buildCacheKey(1, 1);
+        String key = cacheService.buildCacheKey(1);
         CheapSharkDealsCacheDocument document = new CheapSharkDealsCacheDocument(
                 key + ":0",
                 key,
@@ -61,7 +61,7 @@ class CheapSharkDealsCacheServiceTest {
         when(repository.findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(eq(key), any(Instant.class)))
                 .thenReturn(List.of(document));
 
-        Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1, 1);
+        Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1);
 
         assertTrue(result.isPresent());
         assertEquals("deal-1", result.get().getFirst().dealId());
@@ -72,11 +72,11 @@ class CheapSharkDealsCacheServiceTest {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
         CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
 
-        String key = cacheService.buildCacheKey(1, 1);
+        String key = cacheService.buildCacheKey(1);
         when(repository.findAllByCacheKeyAndExpiresAtAfterOrderByResultOrderAsc(eq(key), any(Instant.class)))
                 .thenReturn(List.of());
 
-        Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1, 1);
+        Optional<List<CheapSharkDealDto>> result = cacheService.getFreshDeals(1);
 
         assertTrue(result.isEmpty());
     }
@@ -131,9 +131,9 @@ class CheapSharkDealsCacheServiceTest {
                 )
         );
 
-        cacheService.saveDeals(1, 1, deals);
+        cacheService.saveDeals(1, deals);
 
-        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1, 1));
+        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1));
 
         @SuppressWarnings({"unchecked", "rawtypes"})
         ArgumentCaptor<Iterable<CheapSharkDealsCacheDocument>> documentsCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(List.class);
@@ -158,9 +158,9 @@ class CheapSharkDealsCacheServiceTest {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
         CheapSharkDealsCacheService cacheService = new CheapSharkDealsCacheService(repository, 300);
 
-        cacheService.saveDeals(1, 1, List.of());
+        cacheService.saveDeals(1, List.of());
 
-        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1, 1));
+        verify(repository).deleteAllByCacheKey(cacheService.buildCacheKey(1));
         verify(repository, org.mockito.Mockito.never()).saveAll(any());
     }
 }

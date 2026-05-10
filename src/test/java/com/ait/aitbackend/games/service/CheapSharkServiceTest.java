@@ -24,15 +24,15 @@ class CheapSharkServiceTest {
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
         com.ait.aitbackend.games.cache.CheapSharkDealsCacheService cacheService = mock(com.ait.aitbackend.games.cache.CheapSharkDealsCacheService.class);
         CheapSharkGameCacheRepository gameCacheRepository = mock(CheapSharkGameCacheRepository.class);
-        when(cacheService.getFreshDeals(1, 1)).thenReturn(Optional.empty());
+        when(cacheService.getFreshDeals(1)).thenReturn(Optional.empty());
         CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
         String payload = "[{\"dealID\":\"abc123\"}]";
-        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1"))
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1"))
                 .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
-        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.getDeals(1, 1);
+        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.getDeals(1);
         assertEquals(1, result.size());
         assertEquals("abc123", result.getFirst().dealId());
-        verify(cacheService).saveDeals(eq(1), eq(1), any());
+        verify(cacheService).saveDeals(eq(1), any());
         mockServer.verify();
     }
     @Test
@@ -64,12 +64,12 @@ class CheapSharkServiceTest {
                         "thumb"
                 )
         );
-        when(cacheService.getFreshDeals(1, 1)).thenReturn(Optional.of(cachedDeals));
+        when(cacheService.getFreshDeals(1)).thenReturn(Optional.of(cachedDeals));
         CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
-        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.getDeals(1, 1);
+        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.getDeals(1);
         assertEquals(1, result.size());
         assertEquals("cached-1", result.getFirst().dealId());
-        verify(cacheService, never()).saveDeals(eq(1), eq(1), any());
+        verify(cacheService, never()).saveDeals(eq(1), any());
         mockServer.verify();
     }
     @Test
@@ -80,12 +80,40 @@ class CheapSharkServiceTest {
         CheapSharkGameCacheRepository gameCacheRepository = mock(CheapSharkGameCacheRepository.class);
         CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
         String payload = "[{\"dealID\":\"fresh-1\"}]";
-        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1"))
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1"))
                 .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
-        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.refreshDeals(1, 1);
+        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.refreshDeals(1);
         assertEquals(1, result.size());
         assertEquals("fresh-1", result.getFirst().dealId());
-        verify(cacheService).saveDeals(eq(1), eq(1), any());
+        verify(cacheService).saveDeals(eq(1), any());
+        mockServer.verify();
+    }
+
+    @Test
+    void shouldReturnDealsForDefaultStoresWhenStoreIdIsMissing() {
+        RestClient.Builder restClientBuilder = RestClient.builder();
+        MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
+        com.ait.aitbackend.games.cache.CheapSharkDealsCacheService cacheService = mock(com.ait.aitbackend.games.cache.CheapSharkDealsCacheService.class);
+        CheapSharkGameCacheRepository gameCacheRepository = mock(CheapSharkGameCacheRepository.class);
+        when(cacheService.getFreshDeals(1)).thenReturn(Optional.empty());
+        when(cacheService.getFreshDeals(7)).thenReturn(Optional.empty());
+        when(cacheService.getFreshDeals(25)).thenReturn(Optional.empty());
+        CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1"))
+                .andRespond(withSuccess("[{\"dealID\":\"store-1\"}]", MediaType.APPLICATION_JSON));
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=7"))
+                .andRespond(withSuccess("[{\"dealID\":\"store-7\"}]", MediaType.APPLICATION_JSON));
+        mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=25"))
+                .andRespond(withSuccess("[{\"dealID\":\"store-25\"}]", MediaType.APPLICATION_JSON));
+
+        List<com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto> result = cheapSharkService.getDeals(null);
+        assertEquals(3, result.size());
+        assertEquals("store-1", result.get(0).dealId());
+        assertEquals("store-7", result.get(1).dealId());
+        assertEquals("store-25", result.get(2).dealId());
+        verify(cacheService).saveDeals(eq(1), any());
+        verify(cacheService).saveDeals(eq(7), any());
+        verify(cacheService).saveDeals(eq(25), any());
         mockServer.verify();
     }
     @Test

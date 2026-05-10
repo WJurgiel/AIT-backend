@@ -22,6 +22,8 @@ import java.util.Optional;
 
 @Service
 public class CheapSharkService {
+    private static final List<Integer> DEFAULT_STORE_IDS = List.of(1, 7, 25);
+
     private final RestClient cheapSharkRestClient;
     private final String normalizedBaseUrl;
     private final String normalizedRedirectBaseUrl;
@@ -49,39 +51,45 @@ public class CheapSharkService {
         this.cheapSharkRestClient = restClientBuilder.baseUrl(this.normalizedBaseUrl).build();
     }
 
-    public List<CheapSharkDealDto> getDeals(Integer storeId, Integer onSale) {
-        return dealsCacheService.getFreshDeals(storeId, onSale)
-                .orElseGet(() -> fetchAndCacheDeals(storeId, onSale));
+    public List<CheapSharkDealDto> getDeals(Integer storeId) {
+        if (storeId == null) {
+            return DEFAULT_STORE_IDS.stream()
+                    .map(this::getDeals)
+                    .flatMap(List::stream)
+                    .toList();
+        }
+
+        return dealsCacheService.getFreshDeals(storeId)
+                .orElseGet(() -> fetchAndCacheDeals(storeId));
     }
 
     @SuppressWarnings("unused")
-    public List<CheapSharkDealDto> refreshDeals(Integer storeId, Integer onSale) {
-        return fetchAndCacheDeals(storeId, onSale);
+    public List<CheapSharkDealDto> refreshDeals(Integer storeId) {
+        return fetchAndCacheDeals(storeId);
     }
 
-    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, Integer onSale, int page, int size) {
-        Page<CheapSharkDealDto> cached = dealsCacheService.getDealsPaged(storeId, onSale, page, size);
+    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, int page, int size) {
+        Page<CheapSharkDealDto> cached = dealsCacheService.getDealsPaged(storeId, page, size);
         if (cached.hasContent()) {
             return cached;
         }
 
         // cache miss for requested page -> fetch fresh data, save and re-query
-        fetchAndCacheDeals(storeId, onSale);
-        return dealsCacheService.getDealsPaged(storeId, onSale, page, size);
+        fetchAndCacheDeals(storeId);
+        return dealsCacheService.getDealsPaged(storeId, page, size);
     }
 
-    private List<CheapSharkDealDto> fetchAndCacheDeals(Integer storeId, Integer onSale) {
+    private List<CheapSharkDealDto> fetchAndCacheDeals(Integer storeId) {
         List<CheapSharkDealDto> deals = cheapSharkRestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/deals")
-                        .queryParam("storeID", storeId)
-                        .queryParam("onSale", onSale)
+                        .queryParamIfPresent("storeID", Optional.ofNullable(storeId))
                         .build())
                 .retrieve()
                 .body(new org.springframework.core.ParameterizedTypeReference<>() {
                 });
 
-        dealsCacheService.saveDeals(storeId, onSale, deals);
+        dealsCacheService.saveDeals(storeId, deals);
         return deals;
     }
 
