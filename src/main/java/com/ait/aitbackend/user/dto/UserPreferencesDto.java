@@ -4,7 +4,6 @@ import java.util.List;
 
 public record UserPreferencesDto(
         List<String> platforms,
-        List<String> genres,
         NotificationsDto notifications
 ) {
     public record NotificationsDto(

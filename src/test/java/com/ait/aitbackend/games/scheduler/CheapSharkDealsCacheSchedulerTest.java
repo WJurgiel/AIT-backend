@@ -13,15 +13,14 @@ class CheapSharkDealsCacheSchedulerTest {
         CheapSharkService cheapSharkService = mock(CheapSharkService.class);
         CheapSharkDealsCacheScheduler scheduler = new CheapSharkDealsCacheScheduler(
                 cheapSharkService,
-                "1, 7,25",
-                1
+                "1, 7,25"
         );
 
         scheduler.refreshAllDeals();
 
-        verify(cheapSharkService).refreshDeals(1, 1);
-        verify(cheapSharkService).refreshDeals(7, 1);
-        verify(cheapSharkService).refreshDeals(25, 1);
+        verify(cheapSharkService).refreshDeals(1);
+        verify(cheapSharkService).refreshDeals(7);
+        verify(cheapSharkService).refreshDeals(25);
     }
 }
 
