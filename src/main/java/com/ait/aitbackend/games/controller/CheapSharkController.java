@@ -26,7 +26,6 @@ public class CheapSharkController {
     @GetMapping(value = "/deals", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DealsPageResponse> getDeals(
             @RequestParam(value = "platformId", required = false) Integer platformId,
-            @RequestParam(value = "storeID", required = false) Integer storeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String search,
@@ -36,8 +35,7 @@ public class CheapSharkController {
             @RequestParam(defaultValue = "savings") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir
     ) {
-        Integer effectivePlatformId = platformId != null ? platformId : storeId;
-        List<CheapSharkDealDto> allDeals = cheapSharkService.getDeals(effectivePlatformId);
+        List<CheapSharkDealDto> allDeals = cheapSharkService.getDeals(platformId);
 
         DealsPageResponse response = filterService.filter(
                 allDeals, search, minSavings, maxPrice, minRating, sortBy, sortDir, page, size
