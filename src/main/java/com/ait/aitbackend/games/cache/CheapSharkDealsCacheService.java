@@ -2,10 +2,6 @@ package com.ait.aitbackend.games.cache;
 
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -38,12 +34,6 @@ public class CheapSharkDealsCacheService {
         return deals.isEmpty() ? Optional.empty() : Optional.of(deals);
     }
 
-    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, int page, int size) {
-        String cacheKey = buildCacheKey(storeId);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "resultOrder"));
-        Page<CheapSharkDealsCacheDocument> pageResult = cacheRepository.findByCacheKeyAndExpiresAtAfter(cacheKey, Instant.now(), pageable);
-        return pageResult.map(CheapSharkDealsCacheDocument::getDeal);
-    }
 
     public void saveDeals(Integer storeId, List<CheapSharkDealDto> deals) {
         String cacheKey = buildCacheKey(storeId);

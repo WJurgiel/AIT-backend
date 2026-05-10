@@ -11,7 +11,7 @@ import java.util.Locale;
 /**
  * Applies in-memory filtering and sorting to a list of CheapShark deals,
  * then paginates the result.
- *
+
  * This is intentionally separate from CheapSharkService so the cache/fetch
  * logic stays untouched.
  */

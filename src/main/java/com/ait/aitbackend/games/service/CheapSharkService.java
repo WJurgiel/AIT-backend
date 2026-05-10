@@ -8,7 +8,6 @@ import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
@@ -68,16 +67,6 @@ public class CheapSharkService {
         return fetchAndCacheDeals(storeId);
     }
 
-    public Page<CheapSharkDealDto> getDealsPaged(Integer storeId, int page, int size) {
-        Page<CheapSharkDealDto> cached = dealsCacheService.getDealsPaged(storeId, page, size);
-        if (cached.hasContent()) {
-            return cached;
-        }
-
-        // cache miss for requested page -> fetch fresh data, save and re-query
-        fetchAndCacheDeals(storeId);
-        return dealsCacheService.getDealsPaged(storeId, page, size);
-    }
 
     private List<CheapSharkDealDto> fetchAndCacheDeals(Integer storeId) {
         List<CheapSharkDealDto> deals = cheapSharkRestClient.get()

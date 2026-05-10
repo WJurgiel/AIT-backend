@@ -1,6 +1,10 @@
 package com.ait.aitbackend.games.controller;
 
-import com.ait.aitbackend.games.dto.cheapshark.*;
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
+import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
+import com.ait.aitbackend.games.dto.cheapshark.DealsPageResponse;
 import com.ait.aitbackend.games.service.CheapSharkFilterService;
 import com.ait.aitbackend.games.service.CheapSharkService;
 import lombok.AllArgsConstructor;
