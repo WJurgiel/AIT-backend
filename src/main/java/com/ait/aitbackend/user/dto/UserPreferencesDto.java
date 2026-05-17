@@ -4,7 +4,8 @@ import java.util.List;
 
 public record UserPreferencesDto(
         List<String> platforms,
-        NotificationsDto notifications
+        NotificationsDto notifications,
+        List<String> favoriteGameIds
 ) {
     public record NotificationsDto(
             boolean wishlistOnSale,

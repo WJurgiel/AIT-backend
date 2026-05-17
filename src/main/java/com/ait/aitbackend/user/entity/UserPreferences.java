@@ -28,6 +28,9 @@ public class UserPreferences {
     @Column(name = "notif_price_drop_alerts")
     private boolean priceDropAlerts = true;
 
+    @Column(name = "favorite_game_ids", columnDefinition = "TEXT")
+    private String favoriteGameIds = "";
+
     public List<String> getPlatformList() {
         if (platforms == null || platforms.isBlank()) return new ArrayList<>();
         return new ArrayList<>(List.of(platforms.split(",")));
@@ -35,6 +38,15 @@ public class UserPreferences {
 
     public void setPlatformList(List<String> list) {
         this.platforms = list == null ? "" : String.join(",", list);
+    }
+
+    public List<String> getFavoriteGameIdsList() {
+        if (favoriteGameIds == null || favoriteGameIds.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(List.of(favoriteGameIds.split(",")));
+    }
+
+    public void setFavoriteGameIdsList(List<String> list) {
+        this.favoriteGameIds = list == null ? "" : String.join(",", list);
     }
 
 }
