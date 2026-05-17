@@ -88,6 +88,36 @@ public class UserProfileService {
         return toDto(p);
     }
 
+    public void addFavoriteGame(String username, String gameId) {
+        UserProfile user = getOrThrow(username);
+        UserPreferences p = user.getPreferences();
+        List<String> favorites = p.getFavoriteGameIdsList();
+        if (!favorites.contains(gameId)) {
+            favorites.add(gameId);
+            p.setFavoriteGameIdsList(favorites);
+            userRepository.save(user);
+        }
+    }
+
+    public void removeFavoriteGame(String username, String gameId) {
+        UserProfile user = getOrThrow(username);
+        UserPreferences p = user.getPreferences();
+        List<String> favorites = p.getFavoriteGameIdsList();
+        if (favorites.remove(gameId)) {
+            p.setFavoriteGameIdsList(favorites);
+            userRepository.save(user);
+        }
+    }
+
+    public List<String> getFavoriteGames(String username) {
+        UserProfile user = getOrThrow(username);
+        return user.getPreferences().getFavoriteGameIdsList();
+    }
+
+    public boolean isFavorite(String username, String gameId) {
+        return getFavoriteGames(username).contains(gameId);
+    }
+
     private UserPreferencesDto toDto(UserPreferences p) {
         return new UserPreferencesDto(
                 p.getPlatformList(),
@@ -96,7 +126,8 @@ public class UserProfileService {
                         p.isDailyDigest(),
                         p.isFlashSales(),
                         p.isPriceDropAlerts()
-                )
+                ),
+                p.getFavoriteGameIdsList()
         );
     }
 }

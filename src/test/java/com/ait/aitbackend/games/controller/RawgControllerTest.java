@@ -40,13 +40,42 @@ class RawgControllerTest {
         RawgGamesResponseDto dto = new RawgGamesResponseDto();
         dto.setResults(List.of(game));
 
-        when(rawgService.searchGames(5, "the-witcher")).thenReturn(dto);
+        when(rawgService.searchGames("the-witcher")).thenReturn(dto);
 
         mockMvc.perform(get("/api/rawg/games")
-                        .param("stores", "5")
                         .param("search", "the-witcher"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results[0].name").value("The Witcher"));
+    }
+
+    @Test
+    void shouldReturnRawgPayloadWithoutStoresFilter() throws Exception {
+        RawgGamesResponseDto.RawgGameDto game = new RawgGamesResponseDto.RawgGameDto();
+        game.setName("The Witcher");
+
+        RawgGamesResponseDto dto = new RawgGamesResponseDto();
+        dto.setResults(List.of(game));
+
+        when(rawgService.searchGames("the-witcher")).thenReturn(dto);
+
+        mockMvc.perform(get("/api/rawg/games")
+                        .param("search", "the-witcher"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].name").value("The Witcher"));
+    }
+
+    @Test
+    void shouldReturnSingleGame() throws Exception {
+        RawgGamesResponseDto.RawgGameDto game = new RawgGamesResponseDto.RawgGameDto();
+        game.setId(123);
+        game.setName("The Witcher");
+
+        when(rawgService.getGameById(123)).thenReturn(game);
+
+        mockMvc.perform(get("/api/rawg/games/123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(123))
+                .andExpect(jsonPath("$.name").value("The Witcher"));
     }
 }
 

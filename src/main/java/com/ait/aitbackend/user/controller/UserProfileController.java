@@ -115,4 +115,40 @@ public class UserProfileController {
         String username = jwtService.extractUsername(token);
         return ResponseEntity.ok(userService.updatePreferences(username, dto));
     }
+
+    /** POST /api/users/me/favorites?gameId=... */
+    @PostMapping("/me/favorites")
+    public ResponseEntity<Void> addFavorite(
+            @CookieValue(name = "jwt") String token,
+            @RequestParam String gameId) {
+        String username = jwtService.extractUsername(token);
+        userService.addFavoriteGame(username, gameId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** DELETE /api/users/me/favorites?gameId=... */
+    @DeleteMapping("/me/favorites")
+    public ResponseEntity<Void> removeFavorite(
+            @CookieValue(name = "jwt") String token,
+            @RequestParam String gameId) {
+        String username = jwtService.extractUsername(token);
+        userService.removeFavoriteGame(username, gameId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** GET /api/users/me/favorites */
+    @GetMapping("/me/favorites")
+    public ResponseEntity<List<String>> getFavorites(@CookieValue(name = "jwt") String token) {
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.ok(userService.getFavoriteGames(username));
+    }
+
+    /** GET /api/users/me/favorites/check?gameId=... */
+    @GetMapping("/me/favorites/check")
+    public ResponseEntity<Boolean> isFavorite(
+            @CookieValue(name = "jwt") String token,
+            @RequestParam String gameId) {
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.ok(userService.isFavorite(username, gameId));
+    }
 }
