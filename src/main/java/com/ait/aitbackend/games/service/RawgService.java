@@ -30,5 +30,27 @@ public class RawgService {
                 .retrieve()
                 .body(RawgGamesResponseDto.class);
     }
+
+    /**
+     * Get all games from RAWG API with pagination
+     * Used for caching all games from specified stores
+     *
+     * @param stores Comma-separated store IDs (e.g., "1,5,11" for Steam, GoG, Epic Games)
+     * @param pageSize Number of results per page
+     * @param pageNumber Page number (1-indexed in RAWG API)
+     * @return Response containing games for the requested page
+     */
+    public RawgGamesResponseDto getAllGames(String stores, int pageSize, int pageNumber) {
+        return rawgRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/games")
+                        .queryParam("key", rawgApiKey)
+                        .queryParam("stores", stores)
+                        .queryParam("page_size", pageSize)
+                        .queryParam("page", pageNumber)
+                        .build())
+                .retrieve()
+                .body(RawgGamesResponseDto.class);
+    }
 }
 

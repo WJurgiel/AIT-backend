@@ -1,5 +1,9 @@
 package com.ait.aitbackend.user.service;
 
+import com.ait.aitbackend.games.cache.RawgGameCacheDocument;
+import com.ait.aitbackend.games.cache.RawgGamesCacheService;
+import com.ait.aitbackend.games.service.RawgGamesMappingService;
+import com.ait.aitbackend.user.dto.AddWatchedGameRequest;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,6 +29,12 @@ public class UserProfileServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RawgGamesCacheService rawgGamesCacheService;
+
+    @Mock
+    private RawgGamesMappingService rawgGamesMappingService;
 
     @InjectMocks
     private UserProfileService userService;
@@ -72,5 +83,55 @@ public class UserProfileServiceTest {
         assertEquals(email1, result.getFirst().getEmail());
         assertEquals(username2, result.getLast().getUsername());
         assertEquals(email2, result.getLast().getEmail());
+    }
+
+    @Test
+    void shouldReturnWatchedGameIdsInPreferences() {
+        UserProfile existingUser = new UserProfile(username1, email1, password1);
+        existingUser.getPreferences().setWatchedGameIdList(new java.util.ArrayList<>(List.of("CS-1", "CS-2")));
+        when(userRepository.findByUsername(username1)).thenReturn(Optional.of(existingUser));
+
+        var result = userService.getPreferences(username1);
+
+        assertEquals(List.of("CS-1", "CS-2"), result.watchedGameIds());
+    }
+
+    @Test
+    void shouldAddWatchedGameByRawgId() {
+        UserProfile user = new UserProfile(username1, email1, password1);
+        RawgGameCacheDocument rawgGame = new RawgGameCacheDocument(
+                "v1:rawg:game:1",
+                1,
+                "The Witcher",
+                "the-witcher",
+                "2007-10-26",
+                "thumb",
+                4.8,
+                92,
+                java.time.Instant.now(),
+                java.time.Instant.now().plusSeconds(3600)
+        );
+
+        when(userRepository.findByUsername(username1)).thenReturn(Optional.of(user));
+        when(rawgGamesCacheService.getFreshGameByRawgId(1)).thenReturn(Optional.of(rawgGame));
+        when(rawgGamesMappingService.findCheapSharkGameId("the-witcher", "The Witcher")).thenReturn(Optional.of("CS-1"));
+
+        var result = userService.addWatchedGame(username1, new AddWatchedGameRequest(1));
+
+        assertEquals(List.of("CS-1"), result.watchedGameIds());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void shouldRemoveWatchedGame() {
+        UserProfile user = new UserProfile(username1, email1, password1);
+        user.getPreferences().setWatchedGameIdList(new java.util.ArrayList<>(List.of("CS-1", "CS-2")));
+
+        when(userRepository.findByUsername(username1)).thenReturn(Optional.of(user));
+
+        var result = userService.removeWatchedGame(username1, "CS-1");
+
+        assertEquals(List.of("CS-2"), result.watchedGameIds());
+        verify(userRepository).save(user);
     }
 }

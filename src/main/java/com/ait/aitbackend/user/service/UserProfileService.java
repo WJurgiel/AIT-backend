@@ -2,9 +2,14 @@ package com.ait.aitbackend.user.service;
 
 import com.ait.aitbackend.user.dto.UpdatePasswordRequest;
 import com.ait.aitbackend.user.dto.UpdateProfileRequest;
+import com.ait.aitbackend.user.dto.AddWatchedGameRequest;
 import com.ait.aitbackend.user.dto.UserPreferencesDto;
+import com.ait.aitbackend.games.cache.RawgGameCacheDocument;
+import com.ait.aitbackend.games.cache.RawgGamesCacheService;
+import com.ait.aitbackend.games.service.RawgGamesMappingService;
 import com.ait.aitbackend.user.entity.UserPreferences;
 import com.ait.aitbackend.user.entity.UserProfile;
+import com.ait.aitbackend.user.exceptions.FavoriteGameNotFoundException;
 import com.ait.aitbackend.user.exceptions.InvalidPasswordException;
 import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.exceptions.UserDoesNotExistException;
@@ -22,6 +27,8 @@ public class UserProfileService {
 
     private final UserProfileRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RawgGamesCacheService rawgGamesCacheService;
+    private final RawgGamesMappingService rawgGamesMappingService;
 
     public List<UserProfile> getAllUsers() {
         return userRepository.findAll();
@@ -70,12 +77,37 @@ public class UserProfileService {
         return toDto(p);
     }
 
+    public UserPreferencesDto addWatchedGame(String username, AddWatchedGameRequest req) {
+        UserProfile user = getOrThrow(username);
+        RawgGameCacheDocument rawgGame = rawgGamesCacheService.getFreshGameByRawgId(req.rawgId())
+                .orElseThrow(() -> new FavoriteGameNotFoundException("RAWG game with id '" + req.rawgId() + "' was not found in cache"));
+
+        String cheapSharkGameId = rawgGamesMappingService.findCheapSharkGameId(rawgGame.getSlug(), rawgGame.getName())
+                .orElseThrow(() -> new FavoriteGameNotFoundException(
+                        "Could not map RAWG game '" + rawgGame.getName() + "' to a CheapShark gameId"
+                ));
+
+        UserPreferences p = user.getPreferences();
+        p.addWatchedGameId(cheapSharkGameId);
+        userRepository.save(user);
+        return toDto(p);
+    }
+
+    public UserPreferencesDto removeWatchedGame(String username, String gameId) {
+        UserProfile user = getOrThrow(username);
+        UserPreferences p = user.getPreferences();
+        p.removeWatchedGameId(gameId);
+        userRepository.save(user);
+        return toDto(p);
+    }
+
     public UserPreferencesDto updatePreferences(String username, UserPreferencesDto dto) {
         UserProfile user = getOrThrow(username);
         UserPreferences p = user.getPreferences();
 
         if (dto.platforms() != null) p.setPlatformList(dto.platforms());
         if (dto.genres() != null) p.setGenreList(dto.genres());
+        if (dto.watchedGameIds() != null) p.setWatchedGameIdList(dto.watchedGameIds());
 
         if (dto.notifications() != null) {
             var n = dto.notifications();
@@ -93,6 +125,7 @@ public class UserProfileService {
         return new UserPreferencesDto(
                 p.getPlatformList(),
                 p.getGenreList(),
+                p.getWatchedGameIdList(),
                 new UserPreferencesDto.NotificationsDto(
                         p.isWishlistOnSale(),
                         p.isDailyDigest(),

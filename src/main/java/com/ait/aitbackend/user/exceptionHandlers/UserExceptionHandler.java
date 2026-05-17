@@ -1,6 +1,7 @@
 package com.ait.aitbackend.user.exceptionHandlers;
 
 import com.ait.aitbackend.user.exceptions.InvalidPasswordException;
+import com.ait.aitbackend.user.exceptions.FavoriteGameNotFoundException;
 import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.exceptions.UserDoesNotExistException;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,11 @@ public class UserExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<Map<String,String>> handleInvalidPassword(InvalidPasswordException ex) {
         return error(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+    }
+
+    @ExceptionHandler(FavoriteGameNotFoundException.class)
+    public ResponseEntity<Map<String,String>> handleFavoriteGameNotFound(FavoriteGameNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
     }
 
     private ResponseEntity<Map<String,String>> error(HttpStatus status, String error, String message) {

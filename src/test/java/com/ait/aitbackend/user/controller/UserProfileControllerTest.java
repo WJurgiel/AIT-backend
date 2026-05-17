@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,5 +66,41 @@ public class UserProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.size()").value(2));
+    }
+
+    @Test
+    void shouldAddWatchedGame() throws Exception {
+        when(jwtService.extractUsername("token")).thenReturn(username1);
+        when(userService.addWatchedGame(org.mockito.ArgumentMatchers.eq(username1), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new com.ait.aitbackend.user.dto.UserPreferencesDto(
+                        List.of(),
+                        List.of(),
+                        List.of("CS-1"),
+                        new com.ait.aitbackend.user.dto.UserPreferencesDto.NotificationsDto(true, true, false, true)
+                ));
+
+        mockMvc.perform(post("/api/users/me/preferences/watched-games")
+                        .cookie(new jakarta.servlet.http.Cookie("jwt", "token"))
+                        .contentType("application/json")
+                        .content("{\"rawgId\":1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.watchedGameIds[0]").value("CS-1"));
+    }
+
+    @Test
+    void shouldRemoveWatchedGame() throws Exception {
+        when(jwtService.extractUsername("token")).thenReturn(username1);
+        when(userService.removeWatchedGame(username1, "CS-1"))
+                .thenReturn(new com.ait.aitbackend.user.dto.UserPreferencesDto(
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        new com.ait.aitbackend.user.dto.UserPreferencesDto.NotificationsDto(true, true, false, true)
+                ));
+
+        mockMvc.perform(delete("/api/users/me/preferences/watched-games/CS-1")
+                        .cookie(new jakarta.servlet.http.Cookie("jwt", "token")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.watchedGameIds").isArray());
     }
 }

@@ -107,6 +107,13 @@ public class UserProfileController {
         return ResponseEntity.ok(userService.getPreferences(username));
     }
 
+    /** GET /api/users/me/preferences/watched-games */
+    @GetMapping("/me/preferences/watched-games")
+    public ResponseEntity<List<String>> getWatchedGameIds(@CookieValue(name = "jwt") String token) {
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.ok(userService.getPreferences(username).watchedGameIds());
+    }
+
     /** PUT /api/users/me/preferences */
     @PutMapping("/me/preferences")
     public ResponseEntity<UserPreferencesDto> updatePreferences(
@@ -114,5 +121,23 @@ public class UserProfileController {
             @RequestBody UserPreferencesDto dto) {
         String username = jwtService.extractUsername(token);
         return ResponseEntity.ok(userService.updatePreferences(username, dto));
+    }
+
+    /** POST /api/users/me/preferences/watched-games */
+    @PostMapping("/me/preferences/watched-games")
+    public ResponseEntity<UserPreferencesDto> addWatchedGame(
+            @CookieValue(name = "jwt") String token,
+            @Valid @RequestBody AddWatchedGameRequest req) {
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.ok(userService.addWatchedGame(username, req));
+    }
+
+    /** DELETE /api/users/me/preferences/watched-games/{gameId} */
+    @DeleteMapping("/me/preferences/watched-games/{gameId}")
+    public ResponseEntity<UserPreferencesDto> removeWatchedGame(
+            @CookieValue(name = "jwt") String token,
+            @PathVariable String gameId) {
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.ok(userService.removeWatchedGame(username, gameId));
     }
 }

@@ -18,7 +18,18 @@ class RawgServiceTest {
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
         RawgService rawgService = new RawgService(restClientBuilder, "https://api.rawg.io/api", "test-key");
 
-        String payload = "{\"results\":[{\"name\":\"The Witcher\"}]}";
+        String payload = """
+                {
+                  "count": 1,
+                  "results": [
+                    {
+                      "id": 1,
+                      "slug": "the-witcher",
+                      "name": "The Witcher"
+                    }
+                  ]
+                }
+                """;
 
         mockServer.expect(requestTo("https://api.rawg.io/api/games?key=test-key&stores=5&search=the-witcher"))
                 .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
