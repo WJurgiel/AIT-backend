@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Kontroler odpowiedzialny za obsługę danych z API CheapShark.
+ * Umożliwia pobieranie promocji, wyszukiwanie gier
+ * oraz pobieranie szczegółów ofert.
+ */
 @RestController
 @RequestMapping("/api/cheapshark")
 @AllArgsConstructor
@@ -33,35 +38,62 @@ public class CheapSharkController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) Double minRating,
             @RequestParam(defaultValue = "savings") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir
-    ) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        // Pobranie wszystkich ofert z CheapShark
         List<CheapSharkDealDto> allDeals = cheapSharkService.getDeals(platformId);
 
-        DealsPageResponse response = filterService.filter(
-                allDeals, search, minSavings, maxPrice, minRating, sortBy, sortDir, page, size
-        );
+        // Filtrowanie, sortowanie i paginacja ofert
+        DealsPageResponse response = filterService.filter(allDeals, search, minSavings,
+                maxPrice, minRating, sortBy, sortDir,page, size);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(value = "/games", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<CheapSharkGameSearchDto>> searchGames(@RequestParam String title) {
-        return ResponseEntity.ok(cheapSharkService.searchGamesByTitle(title));
+    @GetMapping(value = "/games",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<CheapSharkGameSearchDto>> searchGames(
+            @RequestParam String title) {
+
+        // Wyszukiwanie gier po tytule
+        return ResponseEntity.ok(
+                cheapSharkService.searchGamesByTitle(title)
+        );
     }
 
-    @GetMapping(value = "/deal", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CheapSharkDealDetailsDto> getDealById(@RequestParam("id") String dealId) {
-        return ResponseEntity.ok(cheapSharkService.getDealById(dealId));
+    @GetMapping(value = "/deal",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CheapSharkDealDetailsDto> getDealById(
+            @RequestParam("id") String dealId) {
+
+        // Pobranie szczegółów oferty
+        return ResponseEntity.ok(
+                cheapSharkService.getDealById(dealId)
+        );
     }
 
-    @GetMapping(value = "/game", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CheapSharkGameDetailsDto> getGameById(@RequestParam("id") String gameId) {
-        return ResponseEntity.ok(cheapSharkService.getGameById(gameId));
+    @GetMapping(value = "/game",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CheapSharkGameDetailsDto> getGameById(
+            @RequestParam("id") String gameId) {
+
+        // Pobranie szczegółów gry
+        return ResponseEntity.ok(
+                cheapSharkService.getGameById(gameId)
+        );
     }
 
     @GetMapping("/redirect")
-    public ResponseEntity<Void> redirectToStore(@RequestParam("dealID") String dealId) {
-        String redirectUrl = cheapSharkService.buildRedirectUrl(dealId);
-        return ResponseEntity.status(302).location(URI.create(redirectUrl)).build();
+    public ResponseEntity<Void> redirectToStore(
+            @RequestParam("dealID") String dealId) {
+
+        // Generowanie linku do sklepu z promocją
+        String redirectUrl =
+                cheapSharkService.buildRedirectUrl(dealId);
+
+        // Przekierowanie użytkownika do sklepu
+        return ResponseEntity.status(302)
+                .location(URI.create(redirectUrl))
+                .build();
     }
 }
