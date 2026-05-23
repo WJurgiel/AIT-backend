@@ -13,9 +13,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
+/**
+ * Serwis odpowiedzialny za obsługę profilu użytkownika,
+ * zmianę danych konta oraz preferencji.
+ */
 @Service
 @AllArgsConstructor
 public class UserProfileService {
@@ -23,61 +24,100 @@ public class UserProfileService {
     private final UserProfileRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<UserProfile> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    public Optional<UserProfile> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
     public UserProfile getOrThrow(String username) {
+
+        // Pobranie użytkownika lub wyrzucenie wyjątku
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserDoesNotExistException("User '" + username + "' not found"));
+                .orElseThrow(() ->
+                        new UserDoesNotExistException(
+                                "User '" + username + "' not found"
+                        )
+                );
     }
 
-    public UserProfile updateProfile(String currentUsername, UpdateProfileRequest req) {
+    public UserProfile updateProfile(
+            String currentUsername,
+            UpdateProfileRequest req) {
+
         UserProfile user = getOrThrow(currentUsername);
 
-        if (req.username() != null && !req.username().equals(currentUsername)) {
+        // Aktualizacja username
+        if (req.username() != null &&
+                !req.username().equals(currentUsername)) {
+
             if (userRepository.existsByUsername(req.username()))
-                throw new UserAlreadyExistsException("Username '" + req.username() + "' is already taken");
+                throw new UserAlreadyExistsException(
+                        "Username '" + req.username() + "' is already taken"
+                );
+
             user.setUsername(req.username());
         }
 
-        if (req.email() != null && !req.email().equals(user.getEmail())) {
+        // Aktualizacja emaila
+        if (req.email() != null &&
+                !req.email().equals(user.getEmail())) {
+
             if (userRepository.existsByEmail(req.email()))
-                throw new UserAlreadyExistsException("Email '" + req.email() + "' is already in use");
+                throw new UserAlreadyExistsException(
+                        "Email '" + req.email() + "' is already in use"
+                );
+
             user.setEmail(req.email());
         }
 
         return userRepository.save(user);
     }
 
-    public void updatePassword(String username, UpdatePasswordRequest req) {
+    public void updatePassword(
+            String username,
+            UpdatePasswordRequest req) {
+
         UserProfile user = getOrThrow(username);
 
-        if (!passwordEncoder.matches(req.currentPassword(), user.getPassword()))
-            throw new InvalidPasswordException("Current password is incorrect");
+        // Sprawdzenie poprawności aktualnego hasła
+        if (!passwordEncoder.matches(
+                req.currentPassword(),
+                user.getPassword())) {
 
-        user.setPassword(passwordEncoder.encode(req.newPassword()));
+            throw new InvalidPasswordException(
+                    "Current password is incorrect"
+            );
+        }
+
+        // Zapis nowego zahaszowanego hasła
+        user.setPassword(
+                passwordEncoder.encode(req.newPassword())
+        );
+
         userRepository.save(user);
     }
 
     public UserPreferencesDto getPreferences(String username) {
+
         UserProfile user = getOrThrow(username);
+
         UserPreferences p = user.getPreferences();
+
         return toDto(p);
     }
 
-    public UserPreferencesDto updatePreferences(String username, UserPreferencesDto dto) {
+    public UserPreferencesDto updatePreferences(
+            String username,
+            UserPreferencesDto dto) {
+
         UserProfile user = getOrThrow(username);
+
         UserPreferences p = user.getPreferences();
 
-        if (dto.platforms() != null) p.setPlatformList(dto.platforms());
+        // Aktualizacja platform
+        if (dto.platforms() != null)
+            p.setPlatformList(dto.platforms());
 
+        // Aktualizacja ustawień powiadomień
         if (dto.notifications() != null) {
+
             var n = dto.notifications();
+
             p.setWishlistOnSale(n.wishlistOnSale());
             p.setDailyDigest(n.dailyDigest());
             p.setFlashSales(n.flashSales());
@@ -85,12 +125,18 @@ public class UserProfileService {
         }
 
         userRepository.save(user);
+
         return toDto(p);
     }
 
+    /**
+     * Konwersja encji preferencji do DTO.
+     */
     private UserPreferencesDto toDto(UserPreferences p) {
+
         return new UserPreferencesDto(
                 p.getPlatformList(),
+
                 new UserPreferencesDto.NotificationsDto(
                         p.isWishlistOnSale(),
                         p.isDailyDigest(),

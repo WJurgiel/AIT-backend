@@ -8,6 +8,10 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Tabela przechowująca dane preferencji użytkownika.
+ * Zawiera preferowane platformy oraz opcje notyfikacji.
+ */
 @Embeddable
 @Getter
 @Setter
