@@ -11,22 +11,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * Kontroler API dla RAWG.
+ * Udostępnia endpointy do wyszukiwania gier oraz pobierania szczegółów gry.
+ */
 @RestController
 @RequestMapping("/api/rawg")
 @AllArgsConstructor
 public class RawgController {
+
     private final RawgService rawgService;
 
+    /**
+     * Wyszukiwanie gier po nazwie (opcjonalny parametr search).
+     */
     @GetMapping(value = "/games", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RawgGamesResponseDto> searchGames(
-            @RequestParam(name = "search", required = false) String search
-    ) {
+    public ResponseEntity<RawgGamesResponseDto> searchGames(@RequestParam(name = "search", required = false) String search) {
         return ResponseEntity.ok(rawgService.searchGames(search));
     }
 
+    /**
+     * Pobranie szczegółów gry po ID.
+     */
     @GetMapping(value = "/games/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RawgGamesResponseDto.RawgGameDto> getGameById(@PathVariable Integer id) {
         return ResponseEntity.ok(rawgService.getGameById(id));
     }
 }
-

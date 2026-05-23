@@ -6,7 +6,6 @@ import com.ait.aitbackend.games.cache.CheapSharkGameCacheRepository;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
-import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameSearchDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -114,42 +113,17 @@ public class CheapSharkService {
     }
 
     /**
-     * Wyszukiwanie gier po tytule.
-     */
-    public List<CheapSharkGameSearchDto> searchGamesByTitle(String title) {
-
-        return cheapSharkRestClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/games")
-                        .queryParam("title", title)
-                        .build())
-                .retrieve()
-                .body(new org.springframework.core.ParameterizedTypeReference<>() {
-                });
-    }
-
-    /**
      * Pobranie szczegółów oferty po ID.
      */
     public CheapSharkDealDetailsDto getDealById(String dealId) {
 
-        String normalizedDealId =
-                normalizePossiblyEncodedValue(dealId);
+        String normalizedDealId = normalizePossiblyEncodedValue(dealId);
 
-        String encodedDealId =
-                URLEncoder.encode(
-                        normalizedDealId,
-                        StandardCharsets.UTF_8
-                );
+        String encodedDealId = URLEncoder.encode(normalizedDealId, StandardCharsets.UTF_8);
 
         return cheapSharkRestClient.get()
-                .uri(URI.create(
-                        normalizedBaseUrl +
-                                "/deals?id=" +
-                                encodedDealId
-                ))
-                .retrieve()
-                .body(CheapSharkDealDetailsDto.class);
+                .uri(URI.create(normalizedBaseUrl + "/deals?id=" + encodedDealId))
+                .retrieve().body(CheapSharkDealDetailsDto.class);
     }
 
     /**
@@ -210,19 +184,11 @@ public class CheapSharkService {
      * Generowanie URL przekierowania do sklepu.
      */
     public String buildRedirectUrl(String dealId) {
+        String normalizedDealId = normalizePossiblyEncodedValue(dealId);
 
-        String normalizedDealId =
-                normalizePossiblyEncodedValue(dealId);
+        String encodedDealId = URLEncoder.encode(normalizedDealId, StandardCharsets.UTF_8);
 
-        String encodedDealId =
-                URLEncoder.encode(
-                        normalizedDealId,
-                        StandardCharsets.UTF_8
-                );
-
-        return normalizedRedirectBaseUrl +
-                "/redirect?dealID=" +
-                encodedDealId;
+        return normalizedRedirectBaseUrl + "/redirect?dealID=" + encodedDealId;
     }
 
     /**
