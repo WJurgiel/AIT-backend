@@ -3,7 +3,7 @@ package com.ait.aitbackend.auth.service;
 import com.ait.aitbackend.security.JwtService;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.repository.UserProfileRepository;
-import com.ait.aitbackend.user.validator.UserValidator;
+import com.ait.aitbackend.auth.validator.UserValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

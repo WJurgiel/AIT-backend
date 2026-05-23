@@ -1,5 +1,6 @@
 package com.ait.aitbackend.user.validator;
 
+import com.ait.aitbackend.auth.validator.UserValidator;
 import com.ait.aitbackend.user.entity.UserProfile;
 import com.ait.aitbackend.user.exceptions.UserAlreadyExistsException;
 import com.ait.aitbackend.user.exceptions.UserDoesNotExistException;
