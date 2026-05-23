@@ -83,6 +83,67 @@ public class CheapSharkController {
         );
     }
 
+    @GetMapping(value = "/game/details", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<com.ait.aitbackend.games.dto.GameDetailsDto> getGameDetails(@RequestParam("id") String dealId) {
+        var details = cheapSharkService.getDealById(dealId);
+
+        String platformLabel = switch (details.gameInfo().storeId()) {
+            case "1" -> "Steam";
+            case "7" -> "GOG";
+            case "25" -> "Epic";
+            default -> "Store " + details.gameInfo().storeId();
+        };
+
+        String redirect = cheapSharkService.buildRedirectUrl(dealId);
+
+        String release = details.gameInfo().releaseDate() == null || details.gameInfo().releaseDate() == 0
+                ? "Unknown"
+                : java.time.Instant.ofEpochSecond(details.gameInfo().releaseDate()).toString();
+
+        String savings = "0.00";
+        try {
+            double retail = Double.parseDouble(details.gameInfo().retailPrice());
+            double sale = Double.parseDouble(details.gameInfo().salePrice());
+            savings = String.format("%.2f", Math.max(retail - sale, 0.0));
+        } catch (Exception ignored) {}
+
+        var prices = new com.ait.aitbackend.games.dto.GameDetailsDto.PriceDto(
+                details.gameInfo().retailPrice(),
+                details.gameInfo().salePrice(),
+                savings
+        );
+
+        java.util.List<com.ait.aitbackend.games.dto.GameDetailsDto.OtherOfferDto> otherOffers;
+        if (details.cheaperStores() == null) {
+            otherOffers = java.util.List.of();
+        } else {
+            otherOffers = details.cheaperStores().stream().map(cs -> {
+                String otherPlatform = "Store " + cs.storeId();
+                String otherRedirect = cheapSharkService.buildRedirectUrl(cs.dealId());
+                return new com.ait.aitbackend.games.dto.GameDetailsDto.OtherOfferDto(
+                        otherPlatform,
+                        cs.retailPrice(),
+                        cs.salePrice(),
+                        otherRedirect
+                );
+            }).toList();
+        }
+
+        var dto = new com.ait.aitbackend.games.dto.GameDetailsDto(
+                details.gameInfo().name(),
+                null,
+                platformLabel,
+                prices,
+                details.gameInfo().steamRatingPercent(),
+                details.gameInfo().thumb(),
+                release,
+                redirect,
+                otherOffers
+        );
+
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping("/redirect")
     public ResponseEntity<Void> redirectToStore(
             @RequestParam("dealID") String dealId) {

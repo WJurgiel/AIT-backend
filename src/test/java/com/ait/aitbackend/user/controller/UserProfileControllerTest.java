@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,5 +67,29 @@ public class UserProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.size()").value(2));
+    }
+
+    @Test
+    void shouldAddFavoriteUsingQueryParam() throws Exception {
+        when(jwtService.extractUsername("jwt")).thenReturn(username1);
+
+        mockMvc.perform(post("/api/users/me/favorites")
+                        .cookie(new jakarta.servlet.http.Cookie("jwt", "jwt"))
+                        .param("gameId", "C5QpU2wB0LJGRegXgpnA6MANIOpLL8HuNKpp+Q/UC8s="))
+                .andExpect(status().isNoContent());
+
+        verify(userService).addFavoriteGame(username1, "C5QpU2wB0LJGRegXgpnA6MANIOpLL8HuNKpp+Q/UC8s=");
+    }
+
+    @Test
+    void shouldRemoveFavoriteUsingQueryParam() throws Exception {
+        when(jwtService.extractUsername("jwt")).thenReturn(username1);
+
+        mockMvc.perform(delete("/api/users/me/favorites")
+                        .cookie(new jakarta.servlet.http.Cookie("jwt", "jwt"))
+                        .param("gameId", "C5QpU2wB0LJGRegXgpnA6MANIOpLL8HuNKpp+Q/UC8s="))
+                .andExpect(status().isNoContent());
+
+        verify(userService).removeFavoriteGame(username1, "C5QpU2wB0LJGRegXgpnA6MANIOpLL8HuNKpp+Q/UC8s=");
     }
 }
