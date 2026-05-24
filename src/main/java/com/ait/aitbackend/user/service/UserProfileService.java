@@ -78,26 +78,15 @@ public class UserProfileService {
     /**
      * Zmiana hasła użytkownika.
      */
-    public void updatePassword(
-            String username,
-            UpdatePasswordRequest req) {
-
+    public void updatePassword(String username, UpdatePasswordRequest req) {
         UserProfile user = getOrThrow(username);
 
         // walidacja aktualnego hasła
-        if (!passwordEncoder.matches(
-                req.currentPassword(),
-                user.getPassword())) {
-
-            throw new InvalidPasswordException(
-                    "Current password is incorrect"
-            );
+        if (!passwordEncoder.matches(req.currentPassword(), user.getPassword())) {
+            throw new InvalidPasswordException("Current password is incorrect");
         }
 
-        user.setPassword(
-                passwordEncoder.encode(req.newPassword())
-        );
-
+        user.setPassword(passwordEncoder.encode(req.newPassword()));
         userRepository.save(user);
     }
 
@@ -144,7 +133,6 @@ public class UserProfileService {
      * Dodanie gry do ulubionych.
      */
     public void addFavoriteGame(String username, String gameId) {
-
         UserProfile user = getOrThrow(username);
         UserPreferences p = user.getPreferences();
 
@@ -161,7 +149,6 @@ public class UserProfileService {
      * Usunięcie gry z ulubionych.
      */
     public void removeFavoriteGame(String username, String gameId) {
-
         UserProfile user = getOrThrow(username);
         UserPreferences p = user.getPreferences();
 
@@ -177,9 +164,7 @@ public class UserProfileService {
      * Pobranie listy ulubionych gier.
      */
     public List<String> getFavoriteGames(String username) {
-
         UserProfile user = getOrThrow(username);
-
         return user.getPreferences().getFavoriteGameIdsList();
     }
 
@@ -187,7 +172,6 @@ public class UserProfileService {
      * Sprawdzenie czy gra jest ulubiona.
      */
     public boolean isFavorite(String username, String gameId) {
-
         return getFavoriteGames(username).contains(gameId);
     }
 
@@ -195,17 +179,14 @@ public class UserProfileService {
      * Konwersja encji preferencji do DTO.
      */
     private UserPreferencesDto toDto(UserPreferences p) {
-
         return new UserPreferencesDto(
                 p.getPlatformList(),
-
                 new UserPreferencesDto.NotificationsDto(
                         p.isWishlistOnSale(),
                         p.isDailyDigest(),
                         p.isFlashSales(),
                         p.isPriceDropAlerts()
                 ),
-
                 p.getFavoriteGameIdsList()
         );
     }

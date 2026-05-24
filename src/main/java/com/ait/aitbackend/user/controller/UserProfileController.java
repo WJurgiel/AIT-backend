@@ -69,8 +69,7 @@ public class UserProfileController {
 
         String oldUsername = jwtService.extractUsername(token);
 
-        UserProfile updated =
-                userService.updateProfile(oldUsername, req);
+        UserProfile updated = userService.updateProfile(oldUsername, req);
 
         UserAboutMeResponse body = new UserAboutMeResponse(
                 updated.getUsername(),
@@ -84,8 +83,7 @@ public class UserProfileController {
         }
 
         // Jeśli username zmieniony → nowy JWT
-        String newToken =
-                jwtService.generateToken(updated.getUsername());
+        String newToken = jwtService.generateToken(updated.getUsername());
 
         ResponseCookie cookie = ResponseCookie.from(jwtCookieName, newToken)
                 .httpOnly(true)
@@ -104,13 +102,10 @@ public class UserProfileController {
      * Zmiana hasła użytkownika.
      */
     @PatchMapping("/me/password")
-    public ResponseEntity<Void> updatePassword(
-            @CookieValue(name = "jwt") String token,
-            @Valid @RequestBody UpdatePasswordRequest req) {
-
+    public ResponseEntity<Void> updatePassword(@CookieValue(name = "jwt") String token,
+                                               @Valid @RequestBody UpdatePasswordRequest req) {
         String username = jwtService.extractUsername(token);
         userService.updatePassword(username, req);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -118,9 +113,7 @@ public class UserProfileController {
      * Pobranie preferencji użytkownika.
      */
     @GetMapping("/me/preferences")
-    public ResponseEntity<UserPreferencesDto> getPreferences(
-            @CookieValue(name = "jwt") String token) {
-
+    public ResponseEntity<UserPreferencesDto> getPreferences(@CookieValue(name = "jwt") String token) {
         String username = jwtService.extractUsername(token);
         return ResponseEntity.ok(userService.getPreferences(username));
     }
@@ -129,27 +122,19 @@ public class UserProfileController {
      * Aktualizacja preferencji użytkownika.
      */
     @PutMapping("/me/preferences")
-    public ResponseEntity<UserPreferencesDto> updatePreferences(
-            @CookieValue(name = "jwt") String token,
-            @RequestBody UserPreferencesDto dto) {
-
+    public ResponseEntity<UserPreferencesDto> updatePreferences(@CookieValue(name = "jwt") String token,
+                                                                @RequestBody UserPreferencesDto dto) {
         String username = jwtService.extractUsername(token);
-        return ResponseEntity.ok(
-                userService.updatePreferences(username, dto)
-        );
+        return ResponseEntity.ok(userService.updatePreferences(username, dto));
     }
 
     /**
      * Dodanie gry do ulubionych.
      */
     @PostMapping("/me/favorites")
-    public ResponseEntity<Void> addFavorite(
-            @CookieValue(name = "jwt") String token,
-            @RequestParam String gameId) {
-
+    public ResponseEntity<Void> addFavorite(@CookieValue(name = "jwt") String token, @RequestParam String gameId) {
         String username = jwtService.extractUsername(token);
         userService.addFavoriteGame(username, gameId);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -157,13 +142,9 @@ public class UserProfileController {
      * Usunięcie gry z ulubionych.
      */
     @DeleteMapping("/me/favorites")
-    public ResponseEntity<Void> removeFavorite(
-            @CookieValue(name = "jwt") String token,
-            @RequestParam String gameId) {
-
+    public ResponseEntity<Void> removeFavorite(@CookieValue(name = "jwt") String token, @RequestParam String gameId) {
         String username = jwtService.extractUsername(token);
         userService.removeFavoriteGame(username, gameId);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -171,26 +152,17 @@ public class UserProfileController {
      * Pobranie listy ulubionych gier.
      */
     @GetMapping("/me/favorites")
-    public ResponseEntity<List<String>> getFavorites(
-            @CookieValue(name = "jwt") String token) {
-
+    public ResponseEntity<List<String>> getFavorites(@CookieValue(name = "jwt") String token) {
         String username = jwtService.extractUsername(token);
-        return ResponseEntity.ok(
-                userService.getFavoriteGames(username)
-        );
+        return ResponseEntity.ok(userService.getFavoriteGames(username));
     }
 
     /**
      * Sprawdzenie czy gra jest w ulubionych.
      */
     @GetMapping("/me/favorites/check")
-    public ResponseEntity<Boolean> isFavorite(
-            @CookieValue(name = "jwt") String token,
-            @RequestParam String gameId) {
-
+    public ResponseEntity<Boolean> isFavorite(@CookieValue(name = "jwt") String token, @RequestParam String gameId) {
         String username = jwtService.extractUsername(token);
-        return ResponseEntity.ok(
-                userService.isFavorite(username, gameId)
-        );
+        return ResponseEntity.ok(userService.isFavorite(username, gameId));
     }
 }

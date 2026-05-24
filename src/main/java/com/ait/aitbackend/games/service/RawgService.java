@@ -35,23 +35,16 @@ public class RawgService {
      * Wyszukiwanie gier po nazwie.
      */
     public RawgGamesResponseDto searchGames(String search) {
-
         ensureRawgKeyConfigured();
-
-        return rawgRestClient.get()
-                .uri(uriBuilder -> {
-                    var uri = uriBuilder
-                            .path("/games")
-                            .queryParam("key", rawgApiKey);
+        return rawgRestClient.get().uri(uriBuilder -> {
+                    var uri = uriBuilder.path("/games").queryParam("key", rawgApiKey);
 
                     // opcjonalny parametr wyszukiwania
                     if (search != null && !search.isBlank())
                         uri = uri.queryParam("search", search);
 
                     return uri.build();
-                })
-                .retrieve()
-                .body(RawgGamesResponseDto.class);
+                }).retrieve().body(RawgGamesResponseDto.class);
     }
 
     /**
