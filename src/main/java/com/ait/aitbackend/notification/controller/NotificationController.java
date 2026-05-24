@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
+    private static final String DEFAULT_TEST_RECIPIENT = "wojtek123@example.com";
+
     private final WishlistSaleNotificationService wishlistSaleNotificationService;
 
     @PostMapping("/wishlist-sale/send")
@@ -24,9 +26,24 @@ public class NotificationController {
     }
 
     @PostMapping("/wishlist-sale/test")
-    public ResponseEntity<WishlistSaleNotificationService.TestEmailContent> getTestWishlistSaleEmailPreview(@RequestBody TestEmailRequest request) {
-        var emailContent = wishlistSaleNotificationService.buildTestEmailContent(request.email());
+    public ResponseEntity<WishlistSaleNotificationService.TestEmailContent> getTestWishlistSaleEmailPreview(@RequestBody(required = false) TestEmailRequest request) {
+        String recipientEmail = resolveRecipientEmail(request);
+        wishlistSaleNotificationService.sendTestWishlistSaleEmail(recipientEmail);
+        var emailContent = wishlistSaleNotificationService.buildTestEmailContent(recipientEmail);
         return ResponseEntity.ok(emailContent);
+    }
+
+    private String resolveRecipientEmail(TestEmailRequest request) {
+        if (request == null || request.email() == null) {
+            return DEFAULT_TEST_RECIPIENT;
+        }
+
+        String email = request.email().trim();
+        if (email.isBlank() || email.equalsIgnoreCase("string") || !email.contains("@") || email.endsWith("@")) {
+            return DEFAULT_TEST_RECIPIENT;
+        }
+
+        return email;
     }
 
     public record NotificationResponse(int count, String message) {
@@ -35,9 +52,3 @@ public class NotificationController {
     public record TestEmailRequest(String email) {
     }
 }
-
-
-
-
-
-

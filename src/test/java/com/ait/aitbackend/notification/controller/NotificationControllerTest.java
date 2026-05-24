@@ -11,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,8 +32,10 @@ class NotificationControllerTest {
         ResponseEntity<NotificationController.NotificationResponse> response = notificationController.sendWishlistSaleNotifications();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(3, response.getBody().count());
-        assertEquals("Sent 3 wishlist sale notification(s)", response.getBody().message());
+        NotificationController.NotificationResponse body = response.getBody();
+        assertNotNull(body);
+        assertEquals(3, body.count());
+        assertEquals("Sent 3 wishlist sale notification(s)", body.message());
     }
 
     @Test
@@ -40,8 +45,32 @@ class NotificationControllerTest {
         ResponseEntity<NotificationController.NotificationResponse> response = notificationController.sendWishlistSaleNotifications();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(0, response.getBody().count());
-        assertEquals("Sent 0 wishlist sale notification(s)", response.getBody().message());
+        NotificationController.NotificationResponse body = response.getBody();
+        assertNotNull(body);
+        assertEquals(0, body.count());
+        assertEquals("Sent 0 wishlist sale notification(s)", body.message());
+    }
+
+    @Test
+    void shouldSendTestEmailAndReturnPreview() {
+        NotificationController.TestEmailRequest request = new NotificationController.TestEmailRequest("trap@mailtrap.io");
+        WishlistSaleNotificationService.TestEmailContent content = new WishlistSaleNotificationService.TestEmailContent(
+                "trap@mailtrap.io",
+                "alerts@ait.local",
+                "Twoje gry z listy życzeń są teraz na promocji",
+                "Cześć Wojtek123,\n\nWykryliśmy nowe promocje dla gier z Twojej listy życzeń:\n\n- Devil May Cry 5 | cena promocyjna: $14.99 | cena regularna: $29.99 | oszczędzasz: 50.0% | link: https://www.cheapshark.com/redirect?dealID=dmc5-deal-test\n\nJeśli chcesz zmienić preferencje powiadomień, zrób to w swoim profilu."
+        );
+
+        doNothing().when(wishlistSaleNotificationService).sendTestWishlistSaleEmail("trap@mailtrap.io");
+        when(wishlistSaleNotificationService.buildTestEmailContent("trap@mailtrap.io")).thenReturn(content);
+
+        ResponseEntity<WishlistSaleNotificationService.TestEmailContent> response = notificationController.getTestWishlistSaleEmailPreview(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        WishlistSaleNotificationService.TestEmailContent body = response.getBody();
+        assertNotNull(body);
+        assertEquals(content, body);
+        assertTrue(body.body().contains("Wojtek123"));
     }
 }
 

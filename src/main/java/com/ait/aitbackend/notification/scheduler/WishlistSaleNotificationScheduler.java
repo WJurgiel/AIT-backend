@@ -14,8 +14,8 @@ public class WishlistSaleNotificationScheduler {
     private final WishlistSaleNotificationService wishlistSaleNotificationService;
 
     @Scheduled(
-            fixedDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:3600000}",
-            initialDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:3600000}"
+            fixedDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:86400000}",
+            initialDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:86400000}"
     )
     public void sendWishlistSaleNotificationsScheduled() {
         int sentEmails = wishlistSaleNotificationService.sendWishlistSaleNotifications();
