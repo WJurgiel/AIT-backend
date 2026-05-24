@@ -74,7 +74,11 @@ public class WishlistSaleNotificationService {
 
         Map<Integer, RawgGamesResponseDto.RawgGameDto> rawgGameCache = new HashMap<>();
         int sentEmails = 0;
-        for (UserProfile user : userProfileRepository.findAll()) {
+        
+        // Fetch all users into a list first to avoid issues with lazy loading and transaction rollback
+        List<UserProfile> allUsers = userProfileRepository.findAll();
+        
+        for (UserProfile user : allUsers) {
             if (!shouldNotify(user)) {
                 continue;
             }
@@ -84,17 +88,22 @@ public class WishlistSaleNotificationService {
                 continue;
             }
 
-            sendEmail(user, alerts);
-            historyRepository.saveAll(alerts.stream()
-                    .map(alert -> new WishlistSaleNotificationHistory(
-                            user.getId(),
-                            alert.internalGameId(),
-                            alert.deal().dealId(),
-                            alert.deal().salePrice(),
-                            Instant.now()
-                    ))
-                    .toList());
-            sentEmails++;
+            try {
+                sendEmail(user, alerts);
+                historyRepository.saveAll(alerts.stream()
+                        .map(alert -> new WishlistSaleNotificationHistory(
+                                user.getId(),
+                                alert.internalGameId(),
+                                alert.deal().dealId(),
+                                alert.deal().salePrice(),
+                                Instant.now()
+                        ))
+                        .toList());
+                sentEmails++;
+            } catch (Exception ex) {
+                log.error("Failed to process wishlist notifications for user {} ({}). Error: {}", 
+                        user.getId(), user.getEmail(), ex.getMessage(), ex);
+            }
         }
 
         return sentEmails;

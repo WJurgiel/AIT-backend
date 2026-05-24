@@ -1,5 +1,6 @@
 package com.ait.aitbackend.notification.controller;
 
+import com.ait.aitbackend.notification.service.DailyDigestNotificationService;
 import com.ait.aitbackend.notification.service.WishlistSaleNotificationService;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationControllerTest {
+
+    @Mock
+    private DailyDigestNotificationService dailyDigestNotificationService;
 
     @Mock
     private WishlistSaleNotificationService wishlistSaleNotificationService;
@@ -49,6 +53,19 @@ class NotificationControllerTest {
         assertNotNull(body);
         assertEquals(0, body.count());
         assertEquals("Sent 0 wishlist sale notification(s)", body.message());
+    }
+
+    @Test
+    void shouldReturnDailyDigestCount() {
+        when(dailyDigestNotificationService.sendDailyDigestNotifications()).thenReturn(4);
+
+        ResponseEntity<NotificationController.NotificationResponse> response = notificationController.sendDailyDigestNotifications();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        NotificationController.NotificationResponse body = response.getBody();
+        assertNotNull(body);
+        assertEquals(4, body.count());
+        assertEquals("Sent 4 daily digest notification(s)", body.message());
     }
 
     @Test
