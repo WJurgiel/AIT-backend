@@ -14,8 +14,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Serwis odpowiedzialny za zarządzanie profilem użytkownika,
+ * preferencjami oraz listą ulubionych gier.
+ */
 @Service
 @AllArgsConstructor
 public class UserProfileService {
@@ -23,61 +26,98 @@ public class UserProfileService {
     private final UserProfileRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<UserProfile> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    public Optional<UserProfile> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
+    /**
+     * Pobiera użytkownika lub rzuca wyjątek jeśli nie istnieje.
+     */
     public UserProfile getOrThrow(String username) {
+
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserDoesNotExistException("User '" + username + "' not found"));
+                .orElseThrow(() ->
+                        new UserDoesNotExistException(
+                                "User '" + username + "' not found"
+                        )
+                );
     }
 
-    public UserProfile updateProfile(String currentUsername, UpdateProfileRequest req) {
+    /**
+     * Aktualizacja danych profilu użytkownika.
+     */
+    public UserProfile updateProfile(
+            String currentUsername,
+            UpdateProfileRequest req) {
+
         UserProfile user = getOrThrow(currentUsername);
 
-        if (req.username() != null && !req.username().equals(currentUsername)) {
+        // zmiana username
+        if (req.username() != null &&
+                !req.username().equals(currentUsername)) {
+
             if (userRepository.existsByUsername(req.username()))
-                throw new UserAlreadyExistsException("Username '" + req.username() + "' is already taken");
+                throw new UserAlreadyExistsException(
+                        "Username '" + req.username() + "' is already taken"
+                );
+
             user.setUsername(req.username());
         }
 
-        if (req.email() != null && !req.email().equals(user.getEmail())) {
+        // zmiana emaila
+        if (req.email() != null &&
+                !req.email().equals(user.getEmail())) {
+
             if (userRepository.existsByEmail(req.email()))
-                throw new UserAlreadyExistsException("Email '" + req.email() + "' is already in use");
+                throw new UserAlreadyExistsException(
+                        "Email '" + req.email() + "' is already in use"
+                );
+
             user.setEmail(req.email());
         }
 
         return userRepository.save(user);
     }
 
+    /**
+     * Zmiana hasła użytkownika.
+     */
     public void updatePassword(String username, UpdatePasswordRequest req) {
         UserProfile user = getOrThrow(username);
 
-        if (!passwordEncoder.matches(req.currentPassword(), user.getPassword()))
+        // walidacja aktualnego hasła
+        if (!passwordEncoder.matches(req.currentPassword(), user.getPassword())) {
             throw new InvalidPasswordException("Current password is incorrect");
+        }
 
         user.setPassword(passwordEncoder.encode(req.newPassword()));
         userRepository.save(user);
     }
 
+    /**
+     * Pobranie preferencji użytkownika.
+     */
     public UserPreferencesDto getPreferences(String username) {
+
         UserProfile user = getOrThrow(username);
-        UserPreferences p = user.getPreferences();
-        return toDto(p);
+
+        return toDto(user.getPreferences());
     }
 
-    public UserPreferencesDto updatePreferences(String username, UserPreferencesDto dto) {
+    /**
+     * Aktualizacja preferencji użytkownika.
+     */
+    public UserPreferencesDto updatePreferences(
+            String username,
+            UserPreferencesDto dto) {
+
         UserProfile user = getOrThrow(username);
+
         UserPreferences p = user.getPreferences();
 
-        if (dto.platforms() != null) p.setPlatformList(dto.platforms());
+        if (dto.platforms() != null)
+            p.setPlatformList(dto.platforms());
 
         if (dto.notifications() != null) {
+
             var n = dto.notifications();
+
             p.setWishlistOnSale(n.wishlistOnSale());
             p.setDailyDigest(n.dailyDigest());
             p.setFlashSales(n.flashSales());
@@ -85,13 +125,19 @@ public class UserProfileService {
         }
 
         userRepository.save(user);
+
         return toDto(p);
     }
 
+    /**
+     * Dodanie gry do ulubionych.
+     */
     public void addFavoriteGame(String username, String gameId) {
         UserProfile user = getOrThrow(username);
         UserPreferences p = user.getPreferences();
+
         List<String> favorites = p.getFavoriteGameIdsList();
+
         if (!favorites.contains(gameId)) {
             favorites.add(gameId);
             p.setFavoriteGameIdsList(favorites);
@@ -99,25 +145,39 @@ public class UserProfileService {
         }
     }
 
+    /**
+     * Usunięcie gry z ulubionych.
+     */
     public void removeFavoriteGame(String username, String gameId) {
         UserProfile user = getOrThrow(username);
         UserPreferences p = user.getPreferences();
+
         List<String> favorites = p.getFavoriteGameIdsList();
+
         if (favorites.remove(gameId)) {
             p.setFavoriteGameIdsList(favorites);
             userRepository.save(user);
         }
     }
 
+    /**
+     * Pobranie listy ulubionych gier.
+     */
     public List<String> getFavoriteGames(String username) {
         UserProfile user = getOrThrow(username);
         return user.getPreferences().getFavoriteGameIdsList();
     }
 
+    /**
+     * Sprawdzenie czy gra jest ulubiona.
+     */
     public boolean isFavorite(String username, String gameId) {
         return getFavoriteGames(username).contains(gameId);
     }
 
+    /**
+     * Konwersja encji preferencji do DTO.
+     */
     private UserPreferencesDto toDto(UserPreferences p) {
         return new UserPreferencesDto(
                 p.getPlatformList(),

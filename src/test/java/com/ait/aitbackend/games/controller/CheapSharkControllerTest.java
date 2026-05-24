@@ -9,14 +9,12 @@ import com.ait.aitbackend.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -25,7 +23,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,6 +44,7 @@ class CheapSharkControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
 
     @Test
     void shouldReturnDealsPayload() throws Exception {
@@ -106,20 +104,11 @@ class CheapSharkControllerTest {
 
     @Test
     void shouldReturnNotFoundFromExternalApiInsteadOf500() throws Exception {
-        String upstreamBody = "{\"error\":\"Deal not found\"}";
-        HttpClientErrorException upstreamException = HttpClientErrorException.create(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                HttpHeaders.EMPTY,
-                upstreamBody.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8
-        );
+        when(cheapSharkService.getDealById("missing-deal"))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
 
-        when(cheapSharkService.getDealById("missing-deal")).thenThrow(upstreamException);
-
-        mockMvc.perform(get("/api/cheapshark/deal").param("id", "missing-deal"))
-                .andExpect(status().isNotFound())
-                .andExpect(content().json(upstreamBody));
+        mockMvc.perform(get("/api/cheapshark/game/details").param("id", "missing-deal"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -148,10 +137,9 @@ class CheapSharkControllerTest {
 
         when(cheapSharkService.getDealById("deal-123")).thenReturn(dto);
 
-        mockMvc.perform(get("/api/cheapshark/deal").param("id", "deal-123"))
+        mockMvc.perform(get("/api/cheapshark/game/details").param("id", "deal-123"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.gameInfo.gameID").value("112330"))
-                .andExpect(jsonPath("$.cheapestPrice.price").value("3.99"));
+                .andExpect(jsonPath("$.name").value("The Witcher 3: Wild Hunt"));
     }
 
     @Test

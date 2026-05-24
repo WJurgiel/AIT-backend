@@ -12,14 +12,22 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 
+/**
+ * Dokument cache'ujący szczegóły gry CheapShark w MongoDB.
+ * TTL zapewnia automatyczne wygasanie danych.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "cheapshark_games_cache")
 @CompoundIndexes({
-		@CompoundIndex(name = "gameid_expires_idx", def = "{'gameId': 1, 'expiresAt': 1}")
+		@CompoundIndex(
+				name = "gameid_expires_idx",
+				def = "{'gameId': 1, 'expiresAt': 1}"
+		)
 })
 public class CheapSharkGameCacheDocument {
+
 	@Id
 	private String id;
 
@@ -27,9 +35,10 @@ public class CheapSharkGameCacheDocument {
 	private String gameId;
 
 	private CheapSharkGameDetailsDto gameDetails;
+
 	private Instant cachedAt;
 
+	// TTL index – dokument wygasa automatycznie
 	@Indexed(expireAfter = "0s")
 	private Instant expiresAt;
 }
-

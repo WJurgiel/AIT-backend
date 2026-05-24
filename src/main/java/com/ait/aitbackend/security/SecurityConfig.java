@@ -19,21 +19,35 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Główna konfiguracja Spring Security dla aplikacji.
+ * Ustawia JWT, CORS, autoryzację oraz politykę sesji (stateless).
+ */
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
+
+    /**
+     * Rejestruje filtr JWT odpowiedzialny za autoryzację użytkownika na podstawie tokena.
+     */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService)
     {
         return new JwtAuthenticationFilter(jwtService, userDetailsService);
     }
 
+    /**
+     * Encoder haseł używany przy rejestracji i logowaniu użytkowników.
+     */
     @Bean
     public PasswordEncoder passwordEncoder()
     {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Konfiguracja łańcucha filtrów Spring Security.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception
     {
@@ -52,6 +66,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Konfiguracja CORS dla frontendu.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource()
     {
@@ -67,6 +84,9 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Bean odpowiedzialny za AuthenticationManager używany w logowaniu.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception
     {

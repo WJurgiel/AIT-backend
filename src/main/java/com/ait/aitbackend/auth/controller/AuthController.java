@@ -1,6 +1,5 @@
 package com.ait.aitbackend.auth.controller;
 
-
 import com.ait.aitbackend.auth.dto.login.LoginRequest;
 import com.ait.aitbackend.auth.dto.login.LoginResponse;
 import com.ait.aitbackend.auth.dto.registration.RegistrationRequest;
@@ -17,11 +16,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Kontroler odpowiedzialny za logowanie i rejestrację użytkowników.
+ * Obsługuje endpointy związane z autoryzacją oraz JWT.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     private final AuthService authService;
 
+    // Konfiguracja ciasteczka JWT pobierana z application.properties
     @Value("${app.security.jwt.cookie-name:jwt}")
     private String jwtCookieName;
 
@@ -40,10 +45,16 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login (@Valid @RequestBody LoginRequest request)
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request)
     {
-        String token = authService.loginUser(request.username(), request.password());
+        // Logowanie użytkownika i wygenerowanie JWT
+        String token = authService.loginUser(
+                request.username(),
+                request.password()
+        );
 
+        // Utworzenie ciasteczka HTTP-only z tokenem
         ResponseCookie jwtCookie = ResponseCookie.from(jwtCookieName, token)
                 .httpOnly(true)
                 .secure(jwtCookieSecure)
@@ -58,15 +69,26 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegistrationResponse> register (@Valid @RequestBody RegistrationRequest request)
+    public ResponseEntity<RegistrationResponse> register(
+            @Valid @RequestBody RegistrationRequest request)
     {
+        // Rejestracja nowego użytkownika
         UserProfile createdUser = authService.registerUser(
                 request.username(),
                 request.email(),
-                request.password());
-        RegistrationResponse response = new RegistrationResponse(createdUser.getUsername());
+                request.password()
+        );
 
-        String token = authService.loginUser(request.username(), request.password());
+        RegistrationResponse response =
+                new RegistrationResponse(createdUser.getUsername());
+
+        // Automatyczne logowanie po rejestracji
+        String token = authService.loginUser(
+                request.username(),
+                request.password()
+        );
+
+        // Utworzenie ciasteczka JWT
         ResponseCookie jwtCookie = ResponseCookie.from(jwtCookieName, token)
                 .httpOnly(true)
                 .secure(jwtCookieSecure)

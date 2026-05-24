@@ -3,14 +3,26 @@ package com.ait.aitbackend.games.dto.cheapshark;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * DTO reprezentujące pojedynczą ofertę (deal) z API CheapShark.
+ * Używane w listach promocji oraz filtrowaniu ofert.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CheapSharkDealDto(
+
         String internalName,
         String title,
         String metacriticLink,
-        @JsonProperty("dealID") String dealId,
-        @JsonProperty("storeID") String storeId,
-        @JsonProperty("gameID") String gameId,
+
+        @JsonProperty("dealID")
+        String dealId,
+
+        @JsonProperty("storeID")
+        String storeId,
+
+        @JsonProperty("gameID")
+        String gameId,
+
         String salePrice,
         String normalPrice,
         String isOnSale,
@@ -19,11 +31,12 @@ public record CheapSharkDealDto(
         String steamRatingText,
         String steamRatingPercent,
         String steamRatingCount,
-        @JsonProperty("steamAppID") String steamAppId,
+
+        @JsonProperty("steamAppID")
+        String steamAppId,
+
         Long releaseDate,
         Long lastChange,
         String dealRating,
         String thumb
-) {
-}
-
+) {}

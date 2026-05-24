@@ -6,6 +6,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Tabela przechowująca dane użytkownika.
+ * Zawiera id, nazwę użytkownika, email, hasło, datę utworzenia oraz preferencje.
+ */
 @Setter
 @Getter
 @Entity

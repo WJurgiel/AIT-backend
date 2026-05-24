@@ -16,6 +16,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtr JWT odpowiedzialny za uwierzytelnianie użytkownika na podstawie tokenu.
+ * Token może być pobrany z cookie lub nagłówka Authorization.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
@@ -24,67 +28,90 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${app.security.jwt.cookie-name:jwt}")
     private String jwtCookieName;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService)
-    {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * Główna logika filtrowania żądania HTTP.
+     * - pobiera JWT
+     * - waliduje token
+     * - ustawia kontekst SecurityContext
+     */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException
-    {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
         final String jwt = resolveToken(request);
-        if (jwt == null || jwt.isBlank())
-        {
+
+        // brak tokena → przepuszczamy dalej
+        if (jwt == null || jwt.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String username;
-        try
-        {
+
+        try {
             username = jwtService.extractUsername(jwt);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
+            // nieprawidłowy token → brak autoryzacji
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null)
-        {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            if(jwtService.isTokenValid(jwt))
-            {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null ,userDetails.getAuthorities()
+            UserDetails userDetails =
+                    this.userDetailsService.loadUserByUsername(username);
+
+            if (jwtService.isTokenValid(jwt)) {
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
                 );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authToken);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 
-    private String resolveToken(HttpServletRequest request)
-    {
+    /**
+     * Pobiera token JWT z cookie lub nagłówka Authorization.
+     */
+    private String resolveToken(HttpServletRequest request) {
+
         Cookie[] cookies = request.getCookies();
-        if (cookies != null)
-        {
-            for (Cookie cookie : cookies)
-            {
-                if (jwtCookieName.equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank())
-                {
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (jwtCookieName.equals(cookie.getName())
+                        && cookie.getValue() != null
+                        && !cookie.getValue().isBlank()) {
                     return cookie.getValue();
                 }
             }
         }
 
         String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer "))
-        {
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
 
