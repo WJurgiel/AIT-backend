@@ -35,8 +35,9 @@ class UserValidatorTest {
     private final String password = "password123";
     private final String encodedPassword = "encodedPassword";
 
-    // ===== REGISTER =====
-
+    /**
+     * Test sprawdza, czy rejestracja przebiega pomyślnie i nie wyrzuca błędów, gdy podana nazwa użytkownika i email nie istnieją jeszcze w bazie.
+     */
     @Test
     void shouldPassValidationWhenUserDoesNotExist() {
         when(userRepository.existsByUsername(username)).thenReturn(false);
@@ -47,6 +48,9 @@ class UserValidatorTest {
         );
     }
 
+    /**
+     * Weryfikuje, czy system rzuca wyjątek UserAlreadyExistsException, gdy próbuje się zarejestrować konto na zajętą już nazwę użytkownika.
+     */
     @Test
     void shouldThrowExceptionWhenUsernameExists() {
         when(userRepository.existsByUsername(username)).thenReturn(true);
@@ -56,6 +60,9 @@ class UserValidatorTest {
         );
     }
 
+    /**
+     * Sprawdza, czy próba rejestracji z użyciem zajętego adresu email kończy się rzuceniem błędu UserAlreadyExistsException.
+     */
     @Test
     void shouldThrowExceptionWhenEmailExists() {
         when(userRepository.existsByUsername(username)).thenReturn(false);
@@ -66,8 +73,9 @@ class UserValidatorTest {
         );
     }
 
-    // ===== LOGIN =====
-
+    /**
+     * Upewnia się, że proces logowania przechodzi bez wyjątków, gdy podany użytkownik istnieje, a hasło zgadza się z tym w bazie.
+     */
     @Test
     void shouldPassLoginWhenCredentialsAreCorrect() {
         UserProfile user = new UserProfile(username, email, encodedPassword);
@@ -80,6 +88,9 @@ class UserValidatorTest {
         );
     }
 
+    /**
+     * Weryfikuje, czy podczas logowania rzucany jest UserDoesNotExistException, jeśli w bazie nie znaleziono podanego loginu.
+     */
     @Test
     void shouldThrowExceptionWhenUserDoesNotExist() {
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
@@ -89,6 +100,9 @@ class UserValidatorTest {
         );
     }
 
+    /**
+     * Sprawdza mechanizm logowania pod kątem błędnego hasła – jeśli hasło nie pasuje, wyrzucany jest wyjątek BadCredentialsException.
+     */
     @Test
     void shouldThrowExceptionWhenPasswordIsInvalid() {
         UserProfile user = new UserProfile(username, email, encodedPassword);

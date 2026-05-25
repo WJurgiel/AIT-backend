@@ -19,6 +19,9 @@ import static org.mockito.Mockito.when;
 
 class CheapSharkDealsCacheServiceTest {
 
+    /**
+     * Upewnia się, że serwis poprawnie pobiera i zwraca z bazy aktualne (niewygasłe) dane ofert zbuforowane pod konkretnym kluczem.
+     */
     @Test
     void shouldReturnFreshDealsFromCache() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
@@ -67,6 +70,9 @@ class CheapSharkDealsCacheServiceTest {
         assertEquals("deal-1", result.get().getFirst().dealId());
     }
 
+    /**
+     * Sprawdza system unieważniania danych. Jeśli wpisy w cache'u straciły na ważności, serwis powinien je zignorować i zwrócić pusty Optional.
+     */
     @Test
     void shouldIgnoreExpiredCacheEntry() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
@@ -81,6 +87,9 @@ class CheapSharkDealsCacheServiceTest {
         assertTrue(result.isEmpty());
     }
 
+    /**
+     * Weryfikuje procedurę zapisu. Najpierw usuwane są stare dane dla danego klucza, a nowa lista zapisywana jest do cache'a z zachowaniem właściwej kolejności.
+     */
     @Test
     void shouldSaveEachDealAsSeparateDocument() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);
@@ -153,6 +162,9 @@ class CheapSharkDealsCacheServiceTest {
         assertEquals("101", savedDocuments.getLast().getGameId());
     }
 
+    /**
+     * Sprawdza, czy przy próbie zapisania zupełnie pustej listy ofert, stary cache zostaje wyczyszczony bez tworzenia żadnych nowych dokumentów.
+     */
     @Test
     void shouldRemoveExistingCacheEntriesWhenSavingEmptyList() {
         CheapSharkDealsCacheRepository repository = mock(CheapSharkDealsCacheRepository.class);

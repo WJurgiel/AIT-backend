@@ -17,6 +17,9 @@ public class WishlistSaleNotificationScheduler {
             fixedDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:86400000}",
             initialDelayString = "${notifications.wishlist-on-sale.scheduler-delay-ms:86400000}"
     )
+    /**
+     * Cykliczne zadanie, wyzwalające serwis powiadomień o zniżkach na gry z listy życzeń i wpisujące liczbę udanych operacji do logów.
+     */
     public void sendWishlistSaleNotificationsScheduled() {
         int sentEmails = wishlistSaleNotificationService.sendWishlistSaleNotifications();
         log.info("Wishlist sale notification run finished; sent {} email(s)", sentEmails);

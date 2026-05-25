@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 public class DailyDigestNotificationScheduler {
     private final DailyDigestNotificationService dailyDigestNotificationService;
 
+    /**
+     * Metoda uruchamiana automatycznie według parametru harmonogramu (domyślnie co 24h), wyzwalająca wysyłkę daily digest i logująca końcowy wynik.
+     */
     @Scheduled(
             fixedDelayString = "${notifications.daily-digest.scheduler-delay-ms:86400000}",
             initialDelayString = "${notifications.daily-digest.scheduler-delay-ms:86400000}"

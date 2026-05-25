@@ -22,6 +22,9 @@ import static org.mockito.Mockito.when;
 
 class DailyDigestNotificationServiceTest {
 
+    /**
+     * Sprawdza, czy e-maile z 5 najlepszymi ofertami trafiają tylko do użytkowników mających włączoną subskrypcję w preferencjach oraz czy zawierają poprawne linki.
+     */
     @Test
     void shouldSendTopFiveDealsOnlyToOptInUsers() {
         UserProfileRepository userRepository = org.mockito.Mockito.mock(UserProfileRepository.class);
@@ -83,6 +86,9 @@ class DailyDigestNotificationServiceTest {
         org.junit.jupiter.api.Assertions.assertFalse(body.contains("Game Six"));
     }
 
+    /**
+     * Upewnia się, że serwis prawidłowo iteruje po subskrybentach i wysyła do każdego z nich oddzielną, niezależną wiadomość z dziennym podsumowaniem.
+     */
     @Test
     void shouldSendSeparateDigestEmailsToEachOptInUser() {
         UserProfileRepository userRepository = org.mockito.Mockito.mock(UserProfileRepository.class);

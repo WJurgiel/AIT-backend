@@ -47,8 +47,24 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    implementation(platform("me.paulschwarz:spring-dotenv-bom:5.1.0"))
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.readLines().forEach { line ->
+            val trimmedLine = line.trim()
+            if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+                val parts = trimmedLine.split("=", limit = 2)
+                if (parts.size == 2) {
+                    environment(parts[0].trim(), parts[1].trim())
+                }
+            }
+        }
+    }
 }

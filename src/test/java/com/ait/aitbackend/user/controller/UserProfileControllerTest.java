@@ -36,6 +36,10 @@ public class UserProfileControllerTest {
     private final String password1 = "mockpassword1234!";
 
 
+    /**
+     * Test weryfikuje poprawne dodawanie gry do ulubionych poprzez parametr URL, oczekując wywołania serwisu i zwrotu statusu 204 No Content dla zautoryzowanego usera.
+     * @throws Exception
+     */
     @Test
     void shouldAddFavoriteUsingQueryParam() throws Exception {
         when(jwtService.extractUsername("jwt")).thenReturn(username1);
@@ -48,6 +52,10 @@ public class UserProfileControllerTest {
         verify(userService).addFavoriteGame(username1, "C5QpU2wB0LJGRegXgpnA6MANIOpLL8HuNKpp+Q/UC8s=");
     }
 
+    /**
+     * Sprawdza, czy endpoint do usuwania gry z ulubionych działa prawidłowo, usuwa powiązanie w serwisie i zwraca status HTTP 204 No Content.
+     * @throws Exception
+     */
     @Test
     void shouldRemoveFavoriteUsingQueryParam() throws Exception {
         when(jwtService.extractUsername("jwt")).thenReturn(username1);

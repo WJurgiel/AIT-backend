@@ -45,6 +45,10 @@ public class AuthRegistrationControllerTest {
     private final String email2 = "other@mail.com";
     private final String password1 = "mockpassword1234!";
 
+    /**
+     * Testuje poprawne flow rejestracji z prawidłowymi danymi, które na końcu ma skutkować utworzeniem obiektu, statusem HTTP 200 i zwróceniem z serializowanego nazwy stworzonego usera.
+     * @throws Exception
+     */
     @Test
     void shouldReturn200AndValidResponseWhenRegister() throws Exception {
         RegistrationRequest request = new RegistrationRequest(username1, email1, password1);
@@ -60,6 +64,10 @@ public class AuthRegistrationControllerTest {
                 .andExpect(jsonPath("$.username").value(username1));
     }
 
+    /**
+     * Upewnia się, że próba zarejestrowania konta z wykorzystaniem zajętej nazwy użytkownika lub powiązanego z innym kontem adresu e-mail zwraca status błędu 409 Conflict.
+     * @throws Exception
+     */
     @Test
     void shouldReturnConflictWhenUsernameOrEmailAlreadyExistsWhenRegister() throws Exception {
         RegistrationRequest firstRequest = new RegistrationRequest(username1, email1, password1);
@@ -88,6 +96,10 @@ public class AuthRegistrationControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    /**
+     * Sprawdza, czy adnotacje walidujące na DTO łapią błędy i odrzucają żądanie rejestracji ze statusem 400, kiedy e-mail ma zły format lub nazwa użytkownika jest za krótka.
+     * @throws Exception
+     */
     @Test
     void shouldReturnBadRequestWhenInvalidEmailOrUsernameProvided() throws Exception {
         String badUsername = "A";
@@ -106,6 +118,9 @@ public class AuthRegistrationControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     Potwierdza, że obiekt wysłany do rejestracji nie przepuści wartości null dla krytycznych pól, natychmiast blokując Request kodem 400.
+     */
     @Test
     void shouldReturnBadRequestWhenNoEmailOrUsernameProvided() throws Exception {
         RegistrationRequest firstBadRequest = new RegistrationRequest(null, email1, password1);

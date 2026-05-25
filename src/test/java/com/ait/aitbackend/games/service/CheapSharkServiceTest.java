@@ -18,14 +18,20 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class CheapSharkServiceTest {
     private static final String API_BASE_URL = "https://www.cheapshark.com/api/1.0";
     private static final String REDIRECT_BASE_URL = "https://www.cheapshark.com";
+
+    /**
+     * Weryfikuje, czy serwis poprawnie pobiera oferty z zewnętrznego API CheapShark, mapuje zwróconego JSON-a do listy DTO i zapisuje wynik w cache'u.
+     */
     @Test
     void shouldReturnDealsPayload() {
         RestClient.Builder restClientBuilder = RestClient.builder();
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
-        com.ait.aitbackend.games.cache.CheapSharkDealsCacheService cacheService = mock(com.ait.aitbackend.games.cache.CheapSharkDealsCacheService.class);
+        com.ait.aitbackend.games.cache.CheapSharkDealsCacheService cacheService =
+                mock(com.ait.aitbackend.games.cache.CheapSharkDealsCacheService.class);
         CheapSharkGameCacheRepository gameCacheRepository = mock(CheapSharkGameCacheRepository.class);
         when(cacheService.getFreshDeals(1)).thenReturn(Optional.empty());
-        CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder, API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
+        CheapSharkService cheapSharkService = new CheapSharkService(restClientBuilder,
+                API_BASE_URL, REDIRECT_BASE_URL, cacheService, gameCacheRepository, 3600);
         String payload = "[{\"dealID\":\"abc123\"}]";
         mockServer.expect(requestTo("https://www.cheapshark.com/api/1.0/deals?storeID=1"))
                 .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
@@ -35,6 +41,10 @@ class CheapSharkServiceTest {
         verify(cacheService).saveDeals(eq(1), any());
         mockServer.verify();
     }
+
+    /**
+     * Sprawdza mechanizm buforowania – jeśli aktualne (nieprzeterminowane) oferty znajdują się już w cache'u, serwis je stamtąd zwraca, nie odpytując w ogóle zewnętrznego API.
+     */
     @Test
     void shouldReturnCachedDealsWithoutCallingExternalApi() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -72,6 +82,10 @@ class CheapSharkServiceTest {
         verify(cacheService, never()).saveDeals(eq(1), any());
         mockServer.verify();
     }
+
+    /**
+     * Upewnia się, że akcja wymuszonego odświeżania całkowicie ignoruje zapisy w cache'u, uderza bezpośrednio do zewnętrznego API, po czym aktualizuje zbuforowane dane nowymi wynikami.
+     */
     @Test
     void shouldForceRefreshDealsBypassingCache() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -89,6 +103,9 @@ class CheapSharkServiceTest {
         mockServer.verify();
     }
 
+    /**
+     * Testuje zachowanie serwisu przy braku przekazanego ID sklepu – w takim wypadku powinien on odpytać po kolei predefiniowaną, domyślną listę sklepów (1, 7, 25) i zwrócić połączone wyniki.
+     */
     @Test
     void shouldReturnDealsForDefaultStoresWhenStoreIdIsMissing() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -116,6 +133,10 @@ class CheapSharkServiceTest {
         verify(cacheService).saveDeals(eq(25), any());
         mockServer.verify();
     }
+
+    /**
+     * Weryfikuje, czy serwis poprawnie koduje identyfikator oferty (stosuje URL encoding) w sytuacji, gdy ID zawiera problematyczne znaki specjalne, zanim wyśle żądanie do API.
+     */
     @Test
     void shouldEncodeDealIdWithSpecialCharacters() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -131,6 +152,10 @@ class CheapSharkServiceTest {
         assertEquals("112330", result.gameInfo().gameId());
         mockServer.verify();
     }
+
+    /**
+     * Upewnia się, że wbudowana funkcja kodująca działa w sposób bezpieczny i nie dokonuje podwójnego URL encodingu dla parametru, który został już odpowiednio zakodowany wcześniej.
+     */
     @Test
     void shouldNotDoubleEncodeAlreadyEncodedDealId() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -146,6 +171,10 @@ class CheapSharkServiceTest {
         assertEquals("112330", result.gameInfo().gameId());
         mockServer.verify();
     }
+
+    /**
+     * Sprawdza, czy funkcja pomocnicza budująca link przekierowujący poprawnie składa cały URL i rzetelnie koduje surowy identyfikator oferty przed wklejeniem go do linku.
+     */
     @Test
     void shouldBuildRedirectUrlFromRawDealId() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -159,6 +188,10 @@ class CheapSharkServiceTest {
                 result
         );
     }
+
+    /**
+     * Zabezpiecza budowanie linku referencyjnego, upewniając się, że metoda pomija ponowne kodowanie, jeśli przekazany identyfikator posiada formę zakodowaną (uniknięcie popsutych linków).
+     */
     @Test
     void shouldBuildRedirectUrlWithoutDoubleEncoding() {
         RestClient.Builder restClientBuilder = RestClient.builder();

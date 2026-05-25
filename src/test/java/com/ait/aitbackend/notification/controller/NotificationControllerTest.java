@@ -29,6 +29,9 @@ class NotificationControllerTest {
     @InjectMocks
     private NotificationController notificationController;
 
+    /**
+     * Sprawdza, czy kontroler powiadomień o wyprzedażach z wishlisty zwraca poprawną liczbę wysłanych e-maili i odpowiedni komunikat.
+     */
     @Test
     void shouldReturnSentEmailCount() {
         when(wishlistSaleNotificationService.sendWishlistSaleNotifications()).thenReturn(3);
@@ -42,6 +45,9 @@ class NotificationControllerTest {
         assertEquals("Sent 3 wishlist sale notification(s)", body.message());
     }
 
+    /**
+     * Upewnia się, że jeśli nie wysłano żadnych powiadomień o wyprzedażach, kontroler poprawnie zwraca zero i status 200 OK.
+     */
     @Test
     void shouldReturnZeroWhenNoEmailsSent() {
         when(wishlistSaleNotificationService.sendWishlistSaleNotifications()).thenReturn(0);
@@ -55,6 +61,9 @@ class NotificationControllerTest {
         assertEquals("Sent 0 wishlist sale notification(s)", body.message());
     }
 
+    /**
+     * Weryfikuje działanie endpointu wysyłającego dzienne podsumowania, upewniając się, że zwraca on precyzyjną liczbę wygenerowanych e-maili
+     */
     @Test
     void shouldReturnDailyDigestCount() {
         when(dailyDigestNotificationService.sendDailyDigestNotifications()).thenReturn(4);
@@ -68,6 +77,9 @@ class NotificationControllerTest {
         assertEquals("Sent 4 daily digest notification(s)", body.message());
     }
 
+    /**
+     * Testuje endpoint e-maila testowego. Sprawdza, czy prawidłowo wysyła on wiadomość i zwraca jej poprawny podgląd bazujący na zmockowanych danych.
+     */
     @Test
     void shouldSendTestEmailAndReturnPreview() {
         NotificationController.TestEmailRequest request = new NotificationController.TestEmailRequest("trap@mailtrap.io");

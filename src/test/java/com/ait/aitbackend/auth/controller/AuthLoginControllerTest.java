@@ -39,6 +39,10 @@ public class AuthLoginControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Sprawdza szczęśliwą ścieżkę logowania. Jeśli wniosek zawiera poprawne poświadczenia, kontroler powinien zwrócić status 200, a wygenerowany token powrócić jako JSON oraz ciasteczko Set-Cookie.
+     * @throws Exception
+     */
     @Test
     void shouldReturn200AndTokenWhenLogin() throws Exception {
         String username = "TestPlayer123";
@@ -56,6 +60,10 @@ public class AuthLoginControllerTest {
                 .andExpect(jsonPath("$.token").value(token));
     }
 
+    /**
+     * Testuje walidację wejściową logowania – przesłanie do endpointu żądania, w którym pole hasła lub nazwy użytkownika to pusty string, kończy się błędem 400 Bad Request.
+     * @throws Exception
+     */
     @Test
     void shouldReturnBadRequestWhenUsernameOrPasswordIsBlank() throws Exception {
         LoginRequest badUsername = new LoginRequest("", "mockpassword1234!");
@@ -72,6 +80,10 @@ public class AuthLoginControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Chroni endpoint uwierzytelniania przed wyjątkami NullPointer – brak jakiegokolwiek z kluczowych atrybutów zgłoszenia (np. gdy są równe null) zostaje zatrzymany z błędem 400 Bad Request.
+     * @throws Exception
+     */
     @Test
     void shouldReturnBadRequestWhenUsernameOrPasswordIsNull() throws Exception {
         LoginRequest missingUsername = new LoginRequest(null, "mockpassword1234!");
