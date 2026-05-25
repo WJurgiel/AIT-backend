@@ -45,7 +45,10 @@ class CheapSharkControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
-
+    /**
+     * Sprawdza, czy endpoint z listą promocji poprawnie filtruje, paginuje i zwraca oferty od zewnętrznego API na podstawie przekazanego parametru platformId.
+     * @throws Exception
+     */
     @Test
     void shouldReturnDealsPayload() throws Exception {
         CheapSharkDealDto deal = new CheapSharkDealDto(
@@ -80,6 +83,10 @@ class CheapSharkControllerTest {
                 .andExpect(jsonPath("$.content[0].dealID").value("abc123"));
     }
 
+    /**
+     * Upewnia się, że w przypadku dostarczenia w URL zarówno ID platformy, jak i sklepu, kontroler słusznie priorytetyzuje ID platformy.
+     * @throws Exception
+     */
     @Test
     void shouldPreferPlatformIdOverStoreIdWhenBothProvided() throws Exception {
         when(cheapSharkService.getDeals(7)).thenReturn(List.of());
@@ -92,6 +99,10 @@ class CheapSharkControllerTest {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * Weryfikuje, czy zapytanie o oferty z pominiętym opcjonalnym identyfikatorem sklepu przetwarza się pomyślnie i zwraca status 200 OK.
+     * @throws Exception
+     */
     @Test
     void shouldReturn200WhenStoreIdIsMissing() throws Exception {
         when(cheapSharkService.getDeals(null)).thenReturn(List.of());
@@ -102,6 +113,10 @@ class CheapSharkControllerTest {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * Zabezpiecza przed wysypywaniem się serwera – weryfikuje czy błąd 404 rzucony przez zewnętrzne API propaguje się z powrotem jako HTTP 404, a nie błąd serwera 500
+     * @throws Exception
+     */
     @Test
     void shouldReturnNotFoundFromExternalApiInsteadOf500() throws Exception {
         when(cheapSharkService.getDealById("missing-deal"))
@@ -111,6 +126,10 @@ class CheapSharkControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    /**
+     * Testuje endpoint szczegółów oferty; upewnia się, że wywołanie poprawnego ID zwraca złożony obiekt zawierający zmapowane informacje o najtańszej cenie.
+     * @throws Exception
+     */
     @Test
     void shouldReturnDealDetailsDto() throws Exception {
         CheapSharkDealDetailsDto dto = new CheapSharkDealDetailsDto(
@@ -142,6 +161,10 @@ class CheapSharkControllerTest {
                 .andExpect(jsonPath("$.name").value("The Witcher 3: Wild Hunt"));
     }
 
+    /**
+     * Sprawdza, czy endpoint przekierowania prawidłowo przetwarza dealID i rzuca statusem HTTP 302 Found, przenosząc z odpowiednim nagłówkiem Location do sklepu.
+     * @throws Exception
+     */
     @Test
     void shouldRedirectToCheapSharkStoreUrl() throws Exception {
         String redirectUrl = "https://www.cheapshark.com/redirect?dealID=x77a6faCQSCDjyCF%2Fe6U0ed%2B202eYPAdrpMjRjoJvYc%3D";
@@ -154,6 +177,10 @@ class CheapSharkControllerTest {
                 .andExpect(header().string("Location", redirectUrl));
     }
 
+    /**
+     * Upewnia się, że zapytanie do endpointu przekierowania całkowicie ignorującego wymagany parametr zapytania skutkuje odpowiedzią 400 Bad Request.
+     * @throws Exception
+     */
     @Test
     void shouldReturn400WhenRedirectParamIsMissing() throws Exception {
         mockMvc.perform(get("/api/cheapshark/redirect"))

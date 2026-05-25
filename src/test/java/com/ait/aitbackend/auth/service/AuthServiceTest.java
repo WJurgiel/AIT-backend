@@ -41,8 +41,9 @@ class AuthServiceTest {
     private final String email = "test@mail.com";
     private final String password = "password123";
 
-    // ===== REGISTER =====
-
+    /**
+     * Sprawdza główny przypadek użycia serwisu rejestracyjnego – poprawne delegowanie weryfikacji zajętości konta, wymuszone hashowanie hasła i uwieńczenie procesu zapisem do repozytorium.
+     */
     @Test
     void shouldRegisterUserSuccessfully() {
         String encodedPassword = "encodedPassword";
@@ -64,6 +65,9 @@ class AuthServiceTest {
         verify(userRepository).save(any(UserProfile.class));
     }
 
+    /**
+     * Zabezpieczenie integralności bazy – jeśli wbudowany w serwis walidator zgłosi błąd podczas rejestracji, metoda powinna uciąć procedurę i pominąć szyfrowanie oraz finalny zapis na dysk.
+     */
     @Test
     void shouldThrowExceptionWhenValidationFailsDuringRegister() {
         doThrow(new RuntimeException("Validation failed"))
@@ -77,8 +81,9 @@ class AuthServiceTest {
         verify(passwordEncoder, never()).encode(any());
     }
 
-    // ===== LOGIN =====
-
+    /**
+     * Odtwarza pozytywne logowanie, gdzie po zatwierdzeniu poświadczeń użytkownika przez AuthenticationManagera generowany jest i bezpośrednio zwracany token JWT.
+     */
     @Test
     void shouldLoginUserSuccessfully() {
         Authentication authentication = mock(Authentication.class);
@@ -99,6 +104,9 @@ class AuthServiceTest {
         verify(jwtService).generateToken(username);
     }
 
+    /**
+     * Weryfikuje mechanizm obronny przed błędnymi logowaniami – niepomyślne przejście weryfikatora danych natychmiastowo ucina metodę z wyjątkiem, oszczędzając niepotrzebne operacje na AuthenticationManagerze i generatorze tokenów.
+     */
     @Test
     void shouldThrowExceptionWhenValidationFailsDuringLogin() {
         doThrow(new RuntimeException("Invalid credentials"))

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.verify;
 
 class CheapSharkDealsCacheSchedulerTest {
 
+    /**
+     * Sprawdza, czy scheduler poprawnie parsuje skonfigurowane w stringu identyfikatory sklepów i dla każdego z nich wywołuje odświeżanie ofert w serwisie.
+     */
     @Test
     void shouldRefreshAllConfiguredStores() {
         CheapSharkService cheapSharkService = mock(CheapSharkService.class);

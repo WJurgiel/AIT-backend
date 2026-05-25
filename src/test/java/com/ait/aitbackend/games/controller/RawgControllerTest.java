@@ -32,6 +32,10 @@ class RawgControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    /**
+     * Sprawdza wyszukiwanie tytułów w RAWG – przekazana z parametryzacji nazwa wyszukanej gry musi znaleźć się w zwróconej poprawnej, ustrukturyzowanej liście json.
+     * @throws Exception
+     */
     @Test
     void shouldReturnRawgPayload() throws Exception {
         RawgGamesResponseDto.RawgGameDto game = new RawgGamesResponseDto.RawgGameDto();
@@ -48,6 +52,10 @@ class RawgControllerTest {
                 .andExpect(jsonPath("$.results[0].name").value("The Witcher"));
     }
 
+    /**
+     * Upewnia się, że endpoint pozwala na elastyczne wyszukiwanie i nadal działa bez problemów w sytuacji, gdy opcjonalne parametry sklepów są pominięte
+     * @throws Exception
+     */
     @Test
     void shouldReturnRawgPayloadWithoutStoresFilter() throws Exception {
         RawgGamesResponseDto.RawgGameDto game = new RawgGamesResponseDto.RawgGameDto();
@@ -64,6 +72,10 @@ class RawgControllerTest {
                 .andExpect(jsonPath("$.results[0].name").value("The Witcher"));
     }
 
+    /**
+     * Weryfikuje działanie odpytywania o specyficzny tytuł – wprowadzony identyfikator gry w adresie endpointu powinien skutkować pobraniem jego konkretnych danych szczegółowych
+     * @throws Exception
+     */
     @Test
     void shouldReturnSingleGame() throws Exception {
         RawgGamesResponseDto.RawgGameDto game = new RawgGamesResponseDto.RawgGameDto();

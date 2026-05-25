@@ -8,6 +8,9 @@ import static org.mockito.Mockito.verify;
 
 class WishlistSaleNotificationSchedulerTest {
 
+    /**
+     * Weryfikuje, czy scheduler odpowiedzialny za powiadomienia o wyprzedażach z wishlisty bezbłędnie uruchamia odpowiednią metodę serwisu
+     */
     @Test
     void shouldDelegateToNotificationService() {
         WishlistSaleNotificationService service = mock(WishlistSaleNotificationService.class);

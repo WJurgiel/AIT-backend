@@ -8,6 +8,9 @@ import static org.mockito.Mockito.verify;
 
 class DailyDigestNotificationSchedulerTest {
 
+    /**
+     * Sprawdza, czy scheduler dla dziennych podsumowań (Daily Digest) poprawnie deleguje cykliczne zadanie, wywołując metodę wysyłającą w serwisie.
+     */
     @Test
     void shouldDelegateToNotificationService() {
         DailyDigestNotificationService service = mock(DailyDigestNotificationService.class);

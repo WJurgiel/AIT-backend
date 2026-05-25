@@ -60,6 +60,10 @@ public class WishlistSaleNotificationService {
         this.fromAddress = fromAddress;
     }
 
+    /**
+    Dla każdego zarejestrowanego użytkownika który wyraził zgodę na wysyłanie maili wyślij powiadomienie
+    jeżeli ich ulubiona gra pojawiła się na przecenie
+     */
     @Transactional
     public int sendWishlistSaleNotifications() {
         Map<String, CheapSharkDealDto> bestDealsByGameId = cheapSharkService.getDeals(null).stream()
@@ -75,7 +79,6 @@ public class WishlistSaleNotificationService {
         Map<Integer, RawgGamesResponseDto.RawgGameDto> rawgGameCache = new HashMap<>();
         int sentEmails = 0;
         
-        // Fetch all users into a list first to avoid issues with lazy loading and transaction rollback
         List<UserProfile> allUsers = userProfileRepository.findAll();
         
         for (UserProfile user : allUsers) {
@@ -109,6 +112,10 @@ public class WishlistSaleNotificationService {
         return sentEmails;
     }
 
+    /**
+     * Waliduje stan konta użytkownika. Zwraca true, jeżeli ma on aktywną flagę chęci powiadomień o zniżkach isWishlistOnSale i poprawny adres e-mail.
+     * @param user
+     */
     private boolean shouldNotify(UserProfile user) {
         return user != null
                 && user.getEmail() != null
@@ -117,6 +124,12 @@ public class WishlistSaleNotificationService {
                 && user.getPreferences().isWishlistOnSale();
     }
 
+    /**
+     * Przygotowuje pulę zniżek na podstawie listy ulubionych gier usera. Wyklucza obniżki odnotowane jako wysłane wcześniej i poddaje ostateczną listę alertów sortowaniu po cenie.
+     * @param user
+     * @param bestDealsByGameId
+     * @param rawgGameCache
+     */
     private List<SaleAlert> buildAlertsForUser(
             UserProfile user,
             Map<String, CheapSharkDealDto> bestDealsByGameId,
@@ -159,6 +172,10 @@ public class WishlistSaleNotificationService {
         return alerts;
     }
 
+    /**
+     * Wyciąga z preferencji kolekcję ID gier ulubionych i "oczyszcza" je z białych znaków, zwracając listę tylko poprawnych, niespustych identyfikatorów.
+     * @param user
+     */
     private Set<String> normalizeFavorites(UserProfile user) {
         if (user.getPreferences() == null) {
             return Set.of();
@@ -175,6 +192,10 @@ public class WishlistSaleNotificationService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    /**
+     * Montuje i układa strukturę wiadomości. Przypisuje statyczny tytuł, definiuje docelowy e-mail usera oraz inicjuje proces generowania wnętrza wiadomości.
+     * @param user
+     */
     private void sendEmail(UserProfile user, List<SaleAlert> alerts) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);
@@ -184,6 +205,11 @@ public class WishlistSaleNotificationService {
         sendEmailSafely(message, user.getEmail());
     }
 
+    /**
+     * Wrapper przechwytujący ew. błędy komunikacji (np. rzucone przez serwer SMTP). W razie problemu loguje to do konsoli, powstrzymując wysypanie głównego wątku pętli schedulerowej.
+     * @param message
+     * @param recipientEmail
+     */
     private void sendEmailSafely(SimpleMailMessage message, String recipientEmail) {
         try {
             mailSender.send(message);
@@ -199,6 +225,11 @@ public class WishlistSaleNotificationService {
         }
     }
 
+    /**
+     * Tworzy treść powiadomienia, dodając dynamiczne spisy gier, ceny oraz specjalne linki referencyjne. Instruktaż zawiera też przypis na dnie z poleceniem jak zrezygnować.
+     * @param recipientName
+     * @param alerts
+     */
     private String buildMessageText(String recipientName, List<SaleAlert> alerts) {
         StringBuilder builder = new StringBuilder();
         builder.append("Cześć ").append(safeValue(recipientName)).append(",\n\n");
@@ -219,6 +250,10 @@ public class WishlistSaleNotificationService {
         return builder.toString();
     }
 
+    /**
+     * Waliduje sprowadzoną odpowiedź DTO, by ustalić czy cena rzeczywiście wylądowała poniżej standardowej lub flaga stanu zgadza się ze statusem "wyprzedaż".
+     * @param deal
+     */
     private boolean isOnSale(CheapSharkDealDto deal) {
         if (deal == null) {
             return false;
@@ -233,6 +268,11 @@ public class WishlistSaleNotificationService {
         return salePrice.compareTo(normalPrice) < 0;
     }
 
+    /**
+     * Filtruje najlepszy stosunek cenowy lub oceny sklepu, żeby zapobiec informowaniu klienta o gorszym dealu w sytuacji, gdy na grę trwają promocje w więcej niż jednym serwisie.
+     * @param left
+     * @param right
+     */
     private CheapSharkDealDto pickBetterDeal(CheapSharkDealDto left, CheapSharkDealDto right) {
         int priceCompare = toDecimal(left.salePrice()).compareTo(toDecimal(right.salePrice()));
         if (priceCompare != 0) {
@@ -247,6 +287,10 @@ public class WishlistSaleNotificationService {
         return safeValue(left.title()).compareToIgnoreCase(safeValue(right.title())) <= 0 ? left : right;
     }
 
+    /**
+     * Bada string w poszukiwaniu pozytywnych twierdzeń ("1", "true", "yes") ignorując wielkość liter.
+     * @param value
+     */
     private boolean isTruthy(String value) {
         if (value == null) {
             return false;
@@ -256,6 +300,10 @@ public class WishlistSaleNotificationService {
         return normalized.equals("1") || normalized.equals("true") || normalized.equals("yes");
     }
 
+    /**
+     * Parser numeryczny, próbujący uchronić aplikację przed problemami na danych (zwraca z góry BigDecimal.ZERO przy błędach np. literówkach w API).
+     * @param value
+     */
     private BigDecimal toDecimal(String value) {
         try {
             if (value == null || value.isBlank()) {
@@ -267,10 +315,18 @@ public class WishlistSaleNotificationService {
         }
     }
 
+    /**
+     * Standardowe ubezpieczenie od nulla w ciągu. Metoda oddaje ucięty ciąg bądź od razu rzuca pustym ciągiem gdy przyjdzie null.
+     * @param value
+     */
     private String normalize(String value) {
         return value == null ? "" : value.trim();
     }
 
+    /**
+     * Przepakowuje wartości null/obiektowe na zrzutowalnego stringa, lub po prostu przy braku oddaje bezpieczny z perspektywy odczytu myślnik.
+     * @param value
+     */
     private String safeValue(String value) {
         return Objects.toString(value, "-");
     }
@@ -339,6 +395,11 @@ public class WishlistSaleNotificationService {
         );
     }
 
+    /**
+     * Ustalanie docelowego identyfikatora. Podejmuje próbę odczytania numeru ID RAWG, ewentualnie parsuje wewnętrzny string i kontaktuje się z API w celu synchronizacji.
+     * @param favoriteGameId
+     * @param rawgGameCache
+     */
     private ResolvedFavoriteGame resolveFavoriteGame(String favoriteGameId, Map<Integer, RawgGamesResponseDto.RawgGameDto> rawgGameCache) {
         String normalizedFavoriteId = normalize(favoriteGameId);
         if (normalizedFavoriteId.isBlank()) {
@@ -365,6 +426,11 @@ public class WishlistSaleNotificationService {
         return new ResolvedFavoriteGame(internalGameId, displayName);
     }
 
+    /**
+     * Zarządca zapytań do RAWG chroniący limity limitu odpytań – utrzymuje w prostej pamięci mapę i używa jej przy odpytywaniu o ten sam tytuł po raz kolejny, redukując opóźnienia.
+     * @param rawgGameId
+     * @param rawgGameCache
+     */
     private RawgGamesResponseDto.RawgGameDto getRawgGame(Integer rawgGameId, Map<Integer, RawgGamesResponseDto.RawgGameDto> rawgGameCache) {
         if (rawgGameId == null) {
             return null;
@@ -385,6 +451,10 @@ public class WishlistSaleNotificationService {
         }
     }
 
+    /**
+     * Ogranicza skoki wyjątków NumberFormatException rzucając zwrotnie typowanym pustym nullem, jeżeli wejście nie stanowi parsowalnego integera.
+     * @param value
+     */
     private Integer tryParseInteger(String value) {
         try {
             return Integer.valueOf(value);
@@ -393,6 +463,10 @@ public class WishlistSaleNotificationService {
         }
     }
 
+    /**
+     * Sanityzuje klucze do wyszukiwań, usuwając odstępy oraz ujednolicając znaki specjalne i wielkość wszystkich symboli, aby uzyskać powtarzalny klucz w Mapach cache.
+     * @param value
+     */
     private String normalizeToInternalGameId(String value) {
         String normalized = normalize(value);
         if (normalized.isBlank()) {
@@ -402,6 +476,10 @@ public class WishlistSaleNotificationService {
         return normalized.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * Przechodzi przez nieskończenie wiele rzuconych argumentów szukając tego pierwszego, który wykaże zawartość znakową i go zwrotnie serwuje.
+     * @param values
+     */
     private String firstNonBlank(String... values) {
         for (String value : values) {
             if (value != null && !value.isBlank()) {

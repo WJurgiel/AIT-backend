@@ -31,6 +31,9 @@ import static org.mockito.Mockito.when;
 
 class WishlistSaleNotificationServiceTest {
 
+    /**
+     * Weryfikuje, czy użytkownik otrzymuje pojedynczy, zbiorczy e-mail ze zniżkami na jego wymarzone gry oraz czy te powiadomienia zapisują się w historii.
+     */
     @Test
     void shouldSendAggregatedEmailForNewWishlistSale() {
         UserProfileRepository userRepository = org.mockito.Mockito.mock(UserProfileRepository.class);
@@ -109,6 +112,9 @@ class WishlistSaleNotificationServiceTest {
                         && Objects.equals(history.getSalePrice(), "9.99")));
     }
 
+    /**
+     * Sprawdza przypadek brzegowy – jeśli dana promocja na grę została już wcześniej wysłana użytkownikowi, serwis blokuje powtórną wysyłkę na podstawie historii.
+     */
     @Test
     void shouldSkipAlreadyNotifiedSale() {
         UserProfileRepository userRepository = org.mockito.Mockito.mock(UserProfileRepository.class);
@@ -147,6 +153,9 @@ class WishlistSaleNotificationServiceTest {
         verify(historyRepository, never()).saveAll(any());
     }
 
+    /**
+     * Testuje działanie metody budującej testowy podgląd e-maila. Upewnia się, że jej output poprawnie wykorzystuje systemowy szablon i przykładowe dane.
+     */
     @Test
     void shouldBuildTestEmailContentUsingSharedTemplate() {
         WishlistSaleNotificationService service = new WishlistSaleNotificationService(

@@ -18,6 +18,9 @@ public class NotificationController {
     private final DailyDigestNotificationService dailyDigestNotificationService;
     private final WishlistSaleNotificationService wishlistSaleNotificationService;
 
+    /**
+     * Wywołuje serwis powiadomień o wyprzedażach z wishlisty i zwraca odpowiedź HTTP z podsumowaniem liczby wysłanych wiadomości.
+     */
     @PostMapping("/wishlist-sale/send")
     public ResponseEntity<NotificationResponse> sendWishlistSaleNotifications() {
         int sentEmails = wishlistSaleNotificationService.sendWishlistSaleNotifications();
@@ -27,6 +30,9 @@ public class NotificationController {
         ));
     }
 
+    /**
+     * Uruchamia proces wysyłania codziennego zestawienia najlepszych ofert i zwraca status 200 OK z liczbą wygenerowanych e-maili.
+     */
     @PostMapping("/daily-digest/send")
     public ResponseEntity<NotificationResponse> sendDailyDigestNotifications() {
         int sentEmails = dailyDigestNotificationService.sendDailyDigestNotifications();
@@ -36,6 +42,9 @@ public class NotificationController {
         ));
     }
 
+    /**
+     * Rozwiązuje adres docelowy, wysyła testowy e-mail z promocją w tle i zwraca jego wygenerowaną treść w formie podglądu JSON.
+     */
     @PostMapping("/wishlist-sale/test")
     public ResponseEntity<WishlistSaleNotificationService.TestEmailContent> getTestWishlistSaleEmailPreview(@RequestBody(required = false) TestEmailRequest request) {
         String recipientEmail = resolveRecipientEmail(request);
@@ -44,6 +53,9 @@ public class NotificationController {
         return ResponseEntity.ok(emailContent);
     }
 
+    /**
+     * Waliduje i normalizuje adres e-mail podany w żądaniu testowym. Przypisuje domyślny adres, jeśli wejście jest puste, niepoprawne lub równe "string".
+     */
     private String resolveRecipientEmail(TestEmailRequest request) {
         if (request == null || request.email() == null) {
             return DEFAULT_TEST_RECIPIENT;

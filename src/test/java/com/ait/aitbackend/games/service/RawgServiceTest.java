@@ -12,6 +12,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class RawgServiceTest {
 
+    /**
+     * Weryfikuje odpytywanie zewnętrznego interfejsu RAWG, potwierdzając, że na podstawie frazy wyszukiwania serwis poprawnie zwraca i rozkodowuje zagnieżdżoną listę wyników.
+     */
     @Test
     void shouldReturnGamesPayload() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -30,6 +33,9 @@ class RawgServiceTest {
         mockServer.verify();
     }
 
+    /**
+     * Sprawdza funkcję pobierania detali konkretnego tytułu, potwierdzając, że po podaniu ID, odpowiedź ze szczegółami gry zostaje poprawnie zmapowana na obiekt.
+     */
     @Test
     void shouldReturnSingleGamePayload() {
         RestClient.Builder restClientBuilder = RestClient.builder();
@@ -48,6 +54,9 @@ class RawgServiceTest {
         mockServer.verify();
     }
 
+    /**
+     * Upewnia się, że wyszukiwanie tytułów gier jest elastyczne, nie narzuca sztywno żadnych filtrów na sklepy i poprawnie zwraca payload dla prostego zapytania ze stringiem wyszukiwania.
+     */
     @Test
     void shouldReturnGamesPayloadWithoutStoresFilter() {
         RestClient.Builder restClientBuilder = RestClient.builder();
