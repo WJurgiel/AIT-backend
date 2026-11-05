@@ -7,6 +7,7 @@ import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDetailsDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkDealDto;
 import com.ait.aitbackend.games.dto.cheapshark.CheapSharkGameDetailsDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
@@ -105,6 +106,7 @@ public class CheapSharkService {
                         .uri(uriBuilder -> uriBuilder.path("/deals")
                                 .queryParamIfPresent("storeID", Optional.ofNullable(storeId))
                                 .build())
+                        .header(HttpHeaders.USER_AGENT, "AIT-Backend/1.0")
                         .retrieve()
                         .body(new org.springframework.core.ParameterizedTypeReference<>() {});
 
@@ -123,6 +125,7 @@ public class CheapSharkService {
 
         return cheapSharkRestClient.get()
                 .uri(URI.create(normalizedBaseUrl + "/deals?id=" + encodedDealId))
+                .header(HttpHeaders.USER_AGENT, "AIT-Backend/1.0")
                 .retrieve().body(CheapSharkDealDetailsDto.class);
     }
 
@@ -159,6 +162,7 @@ public class CheapSharkService {
                                         "/games?id=" +
                                         encodedGameId
                         ))
+                        .header(HttpHeaders.USER_AGENT, "AIT-Backend/1.0")
                         .retrieve()
                         .body(CheapSharkGameDetailsDto.class);
 
